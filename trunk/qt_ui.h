@@ -28,7 +28,7 @@
 #ifndef QT_UI_H
 #define QT_UI_H
 
-int create_qt_ui(RC_NODE *, int, RC_NODE *, int, int, char **);
+int create_qt_ui(RC_CONF *, int, char **);
 
 #endif
 

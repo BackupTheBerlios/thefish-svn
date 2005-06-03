@@ -90,6 +90,8 @@ static int add_entry(dialogMenuItem *);
 static int show_about(dialogMenuItem *);
 static int edit_callback(dialogMenuItem *);
 
+static void ncurses_ui_main(void);
+
 static Boolean exited;
 
 static DMenu *MenuKnobs;
@@ -125,21 +127,37 @@ static char back_str[] = "Back to Main";
 static char change_str[] = "Change";
 static char edit_str[] = "Edit Entry";
 
-static RC_CONF *rc_local;
-static RC_NODE *gb_knobs, *gb_strings;
-static int gb_num_knobs, gb_num_str;
+static RC_CONF rc_local;
 static int gb_dirty = 0;
 
 /* This one needs to be global, as it will be altered when adding new entries */
 static dialogMenuItem *knobs_it, *str_it;
 
 /*
+ * Small stub to call the real code.
+ */
+int
+create_ncurses_ui(RC_CONF *my_rc)
+{
+
+  rc_local.knobs_size = my_rc->knobs_size;
+  rc_local.string_size = my_rc->string_size;
+  rc_local.knobs_ptr = my_rc->knobs_ptr;
+  rc_local.string_ptr = my_rc->string_ptr;
+
+  ncurses_ui_main();
+
+  return(0);
+
+}
+
+/*
  * This is the main function. It builds the menus and sets the appropriate
  * callbacks. Note that when we add entry we re-enter this function to generate
  * the new menus, as I found no other way of doing it with libdialog.
  */
-int
-create_ncurses_ui(RC_CONF *my_rc)
+static 
+void ncurses_ui_main(void)
 {
   WINDOW *scratch;
   int i;
@@ -168,14 +186,9 @@ create_ncurses_ui(RC_CONF *my_rc)
   /* Init the dialog system */
   init_dialog();
 
-  gb_num_knobs = my_rc->knobs_size;
-  gb_num_str = my_rc->string_size;
-  gb_knobs = my_rc->knobs_ptr;
-  gb_strings = my_rc->string_ptr;
-
   /* Allocate memory for knobs + possible user additions */
-  knobs_it = malloc(gb_num_knobs * 2 * sizeof(dialogMenuItem));
-  memset(knobs_it, 0, gb_num_knobs * 2 * sizeof(dialogMenuItem));
+  knobs_it = malloc(rc_local.knobs_size * 2 * sizeof(dialogMenuItem));
+  memset(knobs_it, 0, rc_local.knobs_size * 2 * sizeof(dialogMenuItem));
 
   knobs_it[0].prompt = change_str;
   knobs_it[0].fire = NULL;
@@ -186,17 +199,17 @@ create_ncurses_ui(RC_CONF *my_rc)
    * it begins with 2 because the first two items are part of the
    * menu structure 
    */
-  for (i = 2; i< gb_num_knobs + 2; i++) {
+  for (i = 2; i< rc_local.knobs_size + 2; i++) {
 
     knobs_it[i].title = "";
-    knobs_it[i].prompt = gb_knobs[i - 2].name;
+    knobs_it[i].prompt = rc_local.knobs_ptr[i - 2].name;
     knobs_it[i].checked = dmenuVarCheck; 
     knobs_it[i].fire = dmenuSetVariable;
     knobs_it[i].selected = NULL;
     knobs_it[i].data = malloc(16);
     knobs_it[i].aux = i - 2; /* keep track of knobs <-> menu entry relationship */
 
-    if (gb_knobs[i - 2].knob_val == KNOB_IS_YES) {
+    if (rc_local.knobs_ptr[i - 2].knob_val == KNOB_IS_YES) {
 
       strcpy(knobs_it[i].data, "YES");
 
@@ -212,8 +225,8 @@ create_ncurses_ui(RC_CONF *my_rc)
 
   }
 
-  MenuKnobs = malloc(sizeof(DMenu) + (gb_num_knobs * 2 * sizeof(dialogMenuItem)));
-  memset(MenuKnobs, 0, sizeof(DMenu) + (gb_num_knobs * 2 * sizeof(dialogMenuItem)));
+  MenuKnobs = malloc(sizeof(DMenu) + (rc_local.knobs_size * 2 * sizeof(dialogMenuItem)));
+  memset(MenuKnobs, 0, sizeof(DMenu) + (rc_local.knobs_size * 2 * sizeof(dialogMenuItem)));
 
   MenuKnobs->type = DMENU_CHECKLIST_TYPE;
   MenuKnobs->title = KnobsTitle;
@@ -221,15 +234,15 @@ create_ncurses_ui(RC_CONF *my_rc)
   MenuKnobs->helpline = NULL;
   MenuKnobs->helpfile = NULL;
 
-  for (i = 0; i < gb_num_knobs + 2; i++) {
+  for (i = 0; i < rc_local.knobs_size + 2; i++) {
 
     memcpy(&MenuKnobs->items[i], &knobs_it[i], sizeof(dialogMenuItem));
 
   }
 
   /* Allocate memory for strings + possible user additions */
-  str_it = malloc(gb_num_str * 2 * sizeof(dialogMenuItem));
-  memset(str_it, 0, gb_num_str * 2 * sizeof(dialogMenuItem));
+  str_it = malloc(rc_local.string_size * 2 * sizeof(dialogMenuItem));
+  memset(str_it, 0, rc_local.string_size * 2 * sizeof(dialogMenuItem));
 
   str_it[0].prompt = edit_str;
   str_it[0].fire = NULL;
@@ -237,10 +250,10 @@ create_ncurses_ui(RC_CONF *my_rc)
   str_it[1].fire = NULL;
 
   /* Generate strings menu */
-  for (i = 2; i< gb_num_str + 2; i++) {
+  for (i = 2; i< rc_local.string_size + 2; i++) {
 
-    str_it[i].prompt = gb_strings[i - 2].name;
-    str_it[i].title = gb_strings[i - 2].value;
+    str_it[i].prompt = rc_local.string_ptr[i - 2].name;
+    str_it[i].title = rc_local.string_ptr[i - 2].value;
     str_it[i].checked = NULL;
     str_it[i].fire = edit_callback;
     str_it[i].selected = NULL;
@@ -253,8 +266,8 @@ create_ncurses_ui(RC_CONF *my_rc)
   }
 
 
-  MenuStrings = malloc(sizeof(DMenu) + (gb_num_str * 2 * sizeof(dialogMenuItem)));
-  memset(MenuStrings, 0, sizeof(DMenu) + (gb_num_str * 2 * sizeof(dialogMenuItem)));
+  MenuStrings = malloc(sizeof(DMenu) + (rc_local.string_size * 2 * sizeof(dialogMenuItem)));
+  memset(MenuStrings, 0, sizeof(DMenu) + (rc_local.string_size * 2 * sizeof(dialogMenuItem)));
 
   MenuStrings->type = DMENU_NORMAL_TYPE;
   MenuStrings->title = StringsTitle;
@@ -262,7 +275,7 @@ create_ncurses_ui(RC_CONF *my_rc)
   MenuStrings->helpline = NULL;
   MenuStrings->helpfile = NULL;
 
-  for (i = 0; i < gb_num_str + 2; i++) {
+  for (i = 0; i < rc_local.string_size + 2; i++) {
 
     memcpy(&MenuStrings->items[i], &str_it[i], sizeof(dialogMenuItem));
 
@@ -275,12 +288,12 @@ create_ncurses_ui(RC_CONF *my_rc)
   status = 0;
   really_exit = 0;
 
-  while(really_exit == 0) {
+  while (really_exit == 0) {
 
     choice = scroll = curr = max = 0;
     dmenuOpen(&MenuInitial, &choice, &scroll, &curr, &max, TRUE);
 
-    if(gb_dirty == 1) {
+    if (gb_dirty == 1) {
 
       if (!msgNoYes("There are unsaved changes. Exit anyway?\n")) really_exit = 1;
 
@@ -293,7 +306,6 @@ create_ncurses_ui(RC_CONF *my_rc)
   }
 
   end_dialog();
-  return 0;
 
 }
 
@@ -474,7 +486,8 @@ commit_data(dialogMenuItem *tmp)
 
   if (gb_dirty == 1) {
 
-    i = save_changes(gb_knobs, gb_num_knobs, gb_strings, gb_num_str);
+    i = save_changes(rc_local.knobs_ptr, rc_local.knobs_size, 
+		     rc_local.string_ptr, rc_local.string_size);
 
     if (i == 0) {
 
@@ -491,7 +504,7 @@ commit_data(dialogMenuItem *tmp)
     dialog_notify("There are no unsaved changes");
 
   }
-	
+
   gb_dirty = 0;
 
   return TRUE;
@@ -524,23 +537,23 @@ dmenuSetVariable(dialogMenuItem *tmp)
   if (!strcmp(tmp->data, "YES")) {
 
     strcpy(tmp->data, "NO");
-    gb_knobs[tmp->aux].knob_val = KNOB_IS_NO;		
+    rc_local.knobs_ptr[tmp->aux].knob_val = KNOB_IS_NO;		
 
   } else {
 
     strcpy(tmp->data, "YES");
-    gb_knobs[tmp->aux].knob_val = KNOB_IS_YES;	
+    rc_local.knobs_ptr[tmp->aux].knob_val = KNOB_IS_YES;	
 
   }
 
-  if (gb_knobs[tmp->aux].knob_val == gb_knobs[tmp->aux].knob_orig
-      && gb_knobs[tmp->aux].user_added == USER_ADDED_NO) {
+  if (rc_local.knobs_ptr[tmp->aux].knob_val == rc_local.knobs_ptr[tmp->aux].knob_orig
+      && rc_local.knobs_ptr[tmp->aux].user_added == USER_ADDED_NO) {
 
-    gb_knobs[tmp->aux].modified = MODIFIED_NO;
+    rc_local.knobs_ptr[tmp->aux].modified = MODIFIED_NO;
 
   } else {
 
-    gb_knobs[tmp->aux].modified = MODIFIED_YES;
+    rc_local.knobs_ptr[tmp->aux].modified = MODIFIED_YES;
 
   }
 
@@ -577,7 +590,7 @@ edit_callback(dialogMenuItem *item)
   char result[256];
 
   i = item->aux;
-  strncpy(result, gb_strings[i].value, 255);
+  strncpy(result, rc_local.string_ptr[i].value, 255);
   retcode = dialog_inputbox(item->prompt, "", 8, 64, result);
 
   if (retcode == 0) {
@@ -589,16 +602,16 @@ edit_callback(dialogMenuItem *item)
 
     } else {
 
-      strncpy(gb_strings[i].value, result, 255);
+      strncpy(rc_local.string_ptr[i].value, result, 255);
 
-      if (!strncmp(gb_strings[i].value, gb_strings[i].orig, 255)
-	  && gb_strings[i].user_added == USER_ADDED_NO) {
+      if (!strncmp(rc_local.string_ptr[i].value, rc_local.string_ptr[i].orig, 255)
+	  && rc_local.string_ptr[i].user_added == USER_ADDED_NO) {
 
-	gb_strings[i].modified = MODIFIED_NO;
+	rc_local.string_ptr[i].modified = MODIFIED_NO;
 
       } else {
 
-	gb_strings[i].modified = MODIFIED_YES;
+	rc_local.string_ptr[i].modified = MODIFIED_YES;
 
       }
 
@@ -634,9 +647,9 @@ add_entry(dialogMenuItem *item)
     if (retcode != 0) return DITEM_SUCCESS;
 
     /* Check for duplicate entries */
-    for (i = 0; i < gb_num_knobs; i++) {
+    for (i = 0; i < rc_local.knobs_size; i++) {
 
-      if (!strncmp(gb_knobs[i].name, new_name, 255)) {
+      if (!strncmp(rc_local.knobs_ptr[i].name, new_name, 255)) {
 
 	dupe = 1;
 	break;
@@ -645,9 +658,9 @@ add_entry(dialogMenuItem *item)
 
     }
 
-    for (i = 0; i < gb_num_str; i++) {
+    for (i = 0; i < rc_local.string_size; i++) {
 
-      if (!strncmp(gb_strings[i].name, new_name, 255)) {
+      if (!strncmp(rc_local.string_ptr[i].name, new_name, 255)) {
 	dupe = 1;
 	break;
 
@@ -691,18 +704,18 @@ add_entry(dialogMenuItem *item)
   /* Check if new entry is a KNOB or not */
   if (!strncasecmp(new_value, KNOB_YES, 255) || !strncasecmp(new_value, KNOB_NO, 255)) {
 
-    strncpy(gb_knobs[gb_num_knobs].name, new_name, 255);
+    strncpy(rc_local.knobs_ptr[rc_local.knobs_size].name, new_name, 255);
     if (!strncasecmp(new_value, KNOB_YES, 255)) {
 
-      gb_knobs[gb_num_knobs].knob_val = KNOB_IS_YES;
-      gb_knobs[gb_num_knobs].knob_orig = KNOB_IS_YES;
-      gb_knobs[gb_num_knobs].modified = MODIFIED_YES;
-      gb_knobs[gb_num_knobs].user_added = USER_ADDED_YES;
+      rc_local.knobs_ptr[rc_local.knobs_size].knob_val = KNOB_IS_YES;
+      rc_local.knobs_ptr[rc_local.knobs_size].knob_orig = KNOB_IS_YES;
+      rc_local.knobs_ptr[rc_local.knobs_size].modified = MODIFIED_YES;
+      rc_local.knobs_ptr[rc_local.knobs_size].user_added = USER_ADDED_YES;
 
       if (strlen(new_comment) > 0) {
 
-	strncpy(gb_knobs[gb_num_knobs].comment, new_comment, 255);
-	gb_knobs[gb_num_knobs].user_comment = 1;
+	strncpy(rc_local.knobs_ptr[rc_local.knobs_size].comment, new_comment, 255);
+	rc_local.knobs_ptr[rc_local.knobs_size].user_comment = 1;
 
       }
 
@@ -710,52 +723,54 @@ add_entry(dialogMenuItem *item)
 
     } else {
 
-      gb_knobs[gb_num_knobs].knob_val = KNOB_IS_NO;
-      gb_knobs[gb_num_knobs].knob_orig = KNOB_IS_NO;
-      gb_knobs[gb_num_knobs].modified = MODIFIED_YES;
-      gb_knobs[gb_num_knobs].user_added = USER_ADDED_YES;
+      rc_local.knobs_ptr[rc_local.knobs_size].knob_val = KNOB_IS_NO;
+      rc_local.knobs_ptr[rc_local.knobs_size].knob_orig = KNOB_IS_NO;
+      rc_local.knobs_ptr[rc_local.knobs_size].modified = MODIFIED_YES;
+      rc_local.knobs_ptr[rc_local.knobs_size].user_added = USER_ADDED_YES;
       gb_dirty = 1;
 
       if (strlen(new_comment) > 0) {
 
-	strncpy(gb_knobs[gb_num_knobs].comment, new_comment, 255);
-	gb_knobs[gb_num_knobs].user_comment = 1;
+	strncpy(rc_local.knobs_ptr[rc_local.knobs_size].comment, new_comment, 255);
+	rc_local.knobs_ptr[rc_local.knobs_size].user_comment = 1;
 
       }
 
     }
 
-    gb_num_knobs++;
+    rc_local.knobs_size++;
 
     /* Is a string */
   } else {
 
-    strncpy(gb_strings[gb_num_str].name, new_name, 255);
-    strncpy(gb_strings[gb_num_str].value, new_value, 255);
-    strncpy(gb_strings[gb_num_str].orig, new_value, 255);
-    gb_strings[gb_num_str].modified = MODIFIED_YES;
-    gb_strings[gb_num_str].user_added = USER_ADDED_YES;
+    strncpy(rc_local.string_ptr[rc_local.string_size].name, new_name, 255);
+    strncpy(rc_local.string_ptr[rc_local.string_size].value, new_value, 255);
+    strncpy(rc_local.string_ptr[rc_local.string_size].orig, new_value, 255);
+    rc_local.string_ptr[rc_local.string_size].modified = MODIFIED_YES;
+    rc_local.string_ptr[rc_local.string_size].user_added = USER_ADDED_YES;
     gb_dirty = 1;
 
     if (strlen(new_comment) > 0) {
 
-      strncpy(gb_strings[gb_num_str].comment, new_comment, 255);
-      gb_strings[gb_num_str].user_comment = 1;
+      strncpy(rc_local.string_ptr[rc_local.string_size].comment, new_comment, 255);
+      rc_local.string_ptr[rc_local.string_size].user_comment = 1;
 
     }
 
-    gb_num_str++;			
+    rc_local.string_size++;			
 
   }
 
   /* HACK HACK HACK HACK */
   /* Since there are new entries in the menus, we need to regenerate them, ugly hack */
   end_dialog();
+
   free(knobs_it);
   free(MenuKnobs);
   free(str_it);
   free(MenuStrings);
-  create_ncurses_ui(gb_knobs, gb_num_knobs, gb_strings, gb_num_str);
+
+  ncurses_ui_main();
   end_dialog();
   exit(0);
 

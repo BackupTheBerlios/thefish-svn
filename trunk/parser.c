@@ -95,10 +95,29 @@ build_list(char *filename, RC_CONF *my_rc)
   } while (retval == 0);
 
   /* Second pass, build knob and strings list */
-  my_rc->knobs_ptr = malloc(tmp_knobs*sizeof(RC_NODE ));
-  my_rc->string_ptr = malloc(tmp_strings*sizeof(RC_NODE ));
-  memset(my_rc->knobs_ptr, 0, (tmp_knobs*sizeof(RC_NODE )));
-  memset(my_rc->string_ptr, 0, (tmp_strings*sizeof(RC_NODE )));
+  if (tmp_knobs > 0) {
+
+    my_rc->knobs_ptr = malloc(tmp_knobs * sizeof(RC_NODE));
+    memset(my_rc->knobs_ptr, 0, (tmp_knobs * sizeof(RC_NODE)));
+
+  } else {
+
+    my_rc->knobs_ptr = malloc(sizeof(RC_NODE));
+    memset(my_rc->knobs_ptr, 0, (sizeof(RC_NODE)));
+
+  }
+
+  if (tmp_strings > 0) {
+
+    my_rc->string_ptr = malloc(tmp_strings * sizeof(RC_NODE));
+    memset(my_rc->string_ptr, 0, (tmp_strings * sizeof(RC_NODE)));
+
+  } else {
+
+    my_rc->string_ptr = malloc(sizeof(RC_NODE));
+    memset(my_rc->string_ptr, 0, (sizeof(RC_NODE)));
+
+  }
 
   tmp_knobs = 0;
   tmp_strings = 0;
@@ -267,7 +286,8 @@ parseline(RC_NODE *current)
 
 /*
  * merge_lists receives two tuples of lists and merges the pairs, overriding the 
- * defaults list with the values in the rc list
+ * defaults list with the values in the rc list. It also allocates extra space
+ * for possible user additions.
  */
 int 
 merge_lists(RC_CONF *my_rc_defaults, RC_CONF *my_rc)
@@ -276,16 +296,20 @@ merge_lists(RC_CONF *my_rc_defaults, RC_CONF *my_rc)
   RC_NODE *rc_str_final;
   RC_NODE *baz, *bar, *aux;
   int total_nodes;
-  int foo, j, k;
+  int foo, j, k, asize;
   int node_present;
 
   total_nodes = my_rc_defaults->knobs_size;
 
+  asize = (my_rc_defaults->knobs_size + my_rc->knobs_size) * 2;
+
+#ifdef VERBOSE_CONSOLE
+  printf("Allocated %i bytes for %i knobs.\n", asize * sizeof(RC_NODE), total_nodes);
+#endif
+
   /* merge knobs */
-  rc_knobs_final = malloc((my_rc_defaults->knobs_size + 
-			   my_rc->knobs_size) * sizeof(RC_NODE));
-  memset(rc_knobs_final, 0, ((my_rc_defaults->knobs_size +
-			      my_rc->knobs_size) * sizeof(RC_NODE)));
+  rc_knobs_final = malloc(asize * sizeof(RC_NODE));
+  memset(rc_knobs_final, 0, (asize * sizeof(RC_NODE)));
 
   memcpy(rc_knobs_final, my_rc_defaults->knobs_ptr, 
 	 my_rc_defaults->knobs_size * sizeof(RC_NODE));
@@ -363,9 +387,15 @@ merge_lists(RC_CONF *my_rc_defaults, RC_CONF *my_rc)
   my_rc_defaults->knobs_size = total_nodes;
   my_rc_defaults->knobs_ptr = rc_knobs_final;
 
+  asize = (my_rc_defaults->string_size + my_rc->string_size) * 2;
+
+#ifdef VERBOSE_CONSOLE
+  printf("Allocated %i bytes for strings.\n", asize * sizeof(RC_NODE));
+#endif
+
   /* merge strings */
-  rc_str_final = malloc((my_rc_defaults->string_size + 
-			 my_rc->string_size) * sizeof(RC_NODE));
+  rc_str_final = malloc(asize * sizeof(RC_NODE));
+  memset(rc_str_final, 0, (asize * sizeof(RC_NODE)));
 
   memcpy(rc_str_final, my_rc_defaults->string_ptr, 
 	 my_rc_defaults->string_size * sizeof(RC_NODE));
@@ -458,7 +488,6 @@ merge_lists(RC_CONF *my_rc_defaults, RC_CONF *my_rc)
 
 }
 
-/* This sort routine sucks */
 void
 list_sort(RC_NODE *rc_data, int num)
 {

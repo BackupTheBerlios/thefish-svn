@@ -84,13 +84,12 @@ static int my_num_knobs, my_num_strings;
 
 
 // C compat glue
-extern "C" int create_qt_ui(RC_NODE *, int, RC_NODE *, int, int, char **);
+extern "C" int create_qt_ui(RC_CONF *, int, char **);
 
 static void save_geometry(void);
 
 extern "C" int
-create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
-	     RC_NODE *rc_strings, int num_strings, 
+create_qt_ui(RC_CONF *my_rc, 
 	     int argc, char **argv)
 {
   int i;
@@ -108,17 +107,17 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   // It's more convenient to have these
   // as global.
-  my_rc_knobs = rc_knobs;
-  my_rc_strings = rc_strings;
+  my_rc_knobs = my_rc->knobs_ptr;
+  my_rc_strings = my_rc->string_ptr;
 
-  my_num_knobs = num_knobs;
-  my_num_strings = num_strings;
+  my_num_knobs = my_rc->knobs_size;
+  my_num_strings = my_rc->string_size;
 
   mw = new QMainWindow;
 
-  QVBox *vbox = new QVBox( mw, 0, 0);
+  QVBox *vbox = new QVBox(mw, 0, 0);
 
-  QTabWidget main_tab( vbox, 0, 0);
+  QTabWidget main_tab(vbox, 0, 0);
 
   knobs_table = new QListView;
   strings_table = new QListView;
@@ -130,23 +129,23 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
   strings_table->addColumn("Name", -1);
   strings_table->addColumn("Value",-1);
 
-  QObject::connect( strings_table, SIGNAL(itemRenamed(QListViewItem*, int, const QString &)),
-		    &my_tablecallbacks, SLOT(StringChanged(QListViewItem*, int, const QString &)));
+  QObject::connect(strings_table, SIGNAL(itemRenamed(QListViewItem*, int, const QString &)),
+		   &my_tablecallbacks, SLOT(StringChanged(QListViewItem*, int, const QString &)));
 
 
-  QObject::connect( knobs_table, SIGNAL(clicked(QListViewItem *)),
-		    &my_tablecallbacks, SLOT(KnobChanged(QListViewItem*)));
+  QObject::connect(knobs_table, SIGNAL(clicked(QListViewItem *)),
+		   &my_tablecallbacks, SLOT(KnobChanged(QListViewItem*)));
 
 
-  QObject::connect( strings_table, SIGNAL(clicked(QListViewItem *)),
-		    &my_tablecallbacks, SLOT(StringClicked(QListViewItem*)));
+  QObject::connect(strings_table, SIGNAL(clicked(QListViewItem *)),
+		   &my_tablecallbacks, SLOT(StringClicked(QListViewItem*)));
 
   main_tab.addTab(knobs_table, "Knobs");
   main_tab.addTab(strings_table, "Strings");
 
-  QHBox *hbuttons = new QHBox( vbox, 0, 0);
+  QHBox *hbuttons = new QHBox(vbox, 0, 0);
 
-  SaveButton= new QPushButton("&Save", hbuttons, 0);
+  SaveButton = new QPushButton("&Save", hbuttons, 0);
   QPushButton AddButton("&Add", hbuttons, 0);
   QPushButton AboutButton("A&bout", hbuttons, 0);
   QPushButton QuitButton("&Quit",  hbuttons, 0);
@@ -154,26 +153,26 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
   // No save for now...
   SaveButton->setEnabled(false);
 
-  QObject::connect( &QuitButton, SIGNAL(clicked()), &my_dialogs, SLOT(CheckSaved()));
-  QObject::connect( &AboutButton, SIGNAL(clicked()), &my_dialogs, SLOT(ShowAbout()));
-  QObject::connect( &AddButton, SIGNAL(clicked()), &my_dialogs, SLOT(DoAdd()));
-  QObject::connect( SaveButton, SIGNAL(clicked()), &my_dialogs, SLOT(DoSave()));
+  QObject::connect(&QuitButton, SIGNAL(clicked()), &my_dialogs, SLOT(CheckSaved()));
+  QObject::connect(&AboutButton, SIGNAL(clicked()), &my_dialogs, SLOT(ShowAbout()));
+  QObject::connect(&AddButton, SIGNAL(clicked()), &my_dialogs, SLOT(DoAdd()));
+  QObject::connect(SaveButton, SIGNAL(clicked()), &my_dialogs, SLOT(DoSave()));
 
   // We're now using human readable data, handle the migration
   // transparently for the user.
   homedir = getenv("HOME");
 
-  if(homedir != NULL) {
+  if (homedir != NULL) {
 
     snprintf(temp, FILENAME_MAX, "%s/%s", homedir, ".thefishrc");
-    fd=open(temp, O_RDONLY, 0);
+    fd = open(temp, O_RDONLY, 0);
 
-    if(fd != -1 ) {
+    if (fd != -1 ) {
 
       i = lseek(fd, 0, SEEK_END);
       lseek(fd, 0, SEEK_SET);
 
-      if(i == sizeof(oldsize)) {
+      if (i == sizeof(oldsize)) {
 
 	read(fd, &oldsize[0], sizeof(oldsize));
 	close(fd);
@@ -197,23 +196,17 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   // Build the table
 
-  knobs_table->setColumnWidthMode ( 1, QListView::Maximum);
+  knobs_table->setColumnWidthMode (1, QListView::Maximum);
   knobs_table->setRootIsDecorated(false);
 
-  QColor mygray(240,240,240);
-
-  for(i = num_knobs-1; i >= 0; i--) {
+  for (i = my_rc->knobs_size - 1; i >= 0; i--) {
 
     // No user comments yet
-    (rc_knobs+i)->user_comment = 0;
+    (my_rc->knobs_ptr+i)->user_comment = 0;
 
-    foo = new QCheckListItem( knobs_table, (rc_knobs+i)->name, QCheckListItem::CheckBox);
+    foo = new QCheckListItem( knobs_table, (my_rc->knobs_ptr+i)->name, QCheckListItem::CheckBox);
 
-    //    if(i%2==0) foo->setPaletteBackgroundColor(&mygray);
-
-
-
-  if( (rc_knobs+i)->knob_val == KNOB_IS_NO) {
+  if ((my_rc->knobs_ptr+i)->knob_val == KNOB_IS_NO) {
 
       foo->setOn(FALSE);
 
@@ -225,12 +218,14 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   }
 
-  for(i = num_strings - 1; i >= 0; i--) {
+  for (i = my_rc->string_size - 1; i >= 0; i--) {
 
     // No user comments yet
-    (rc_strings+i)->user_comment = 0;
+    (my_rc->string_ptr+i)->user_comment = 0;
 
-    element = new QListViewItem(strings_table, (rc_strings+i)->name, (rc_strings+i)->value);
+    element = new QListViewItem(strings_table, 
+				(my_rc->string_ptr+i)->name, 
+				(my_rc->string_ptr+i)->value);
     element->setRenameEnabled(0, FALSE);
     element->setRenameEnabled(1, TRUE);
 
@@ -241,13 +236,13 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   mw->setIcon((const QPixmap ) my_icon);
 
-  mw->setCaption( "The Fish " THE_FISH_VERSION);
+  mw->setCaption("The Fish " THE_FISH_VERSION);
   mw->setCentralWidget( vbox );
   thefish->setMainWidget(mw);
   mw->show();
   mw->resize(oldsize[0], oldsize[1]);
 
-  dirty=0;
+  dirty = 0;
 
   my_status_bar = mw->statusBar(); 
   my_status_bar->message("Ready");
@@ -261,15 +256,15 @@ MyDialogs::CheckSaved()
 {
   int retcode;
 
-  if(dirty>0) {
+  if (dirty > 0) {
 
-    retcode = QMessageBox::warning( 0, "The Fish",
-				    "There are unsaved changes. "
-				    "Quit anyway?\n\n",
-				    "Yes",
-				    "No", 0, 0, 1 );
+    retcode = QMessageBox::warning(0, "The Fish",
+				   "There are unsaved changes. "
+				   "Quit anyway?\n\n",
+				   "Yes",
+				   "No", 0, 0, 1 );
 
-    if(retcode == 0) {
+    if (retcode == 0) {
 
       save_geometry();
       thefish->exit(0);
@@ -313,15 +308,15 @@ TableCallbacks::StringChanged(QListViewItem * item, int col, const QString & tex
   fprintf(stderr, "You've set %s to %s\n", value.ascii(), text.ascii());
 #endif
 
-  for(i = 0; i <= my_num_strings; i++) {
+  for (i = 0; i <= my_num_strings; i++) {
 
-    if(strncmp((my_rc_strings+i)->name, value.ascii(), 255) == 0) {
+    if (strncmp((my_rc_strings+i)->name, value.ascii(), 255) == 0) {
 
       strncpy((my_rc_strings+i)->value, text.ascii(), 255);
 
-      if(strncmp((my_rc_strings+i)->orig, text.ascii(), 255) == 0) {
+      if (strncmp((my_rc_strings+i)->orig, text.ascii(), 255) == 0) {
 
-	if(dirty>0) dirty--;
+	if (dirty > 0) dirty--;
 	(my_rc_strings+i)->modified = NOT_MODIFIED;
 
       } else {
@@ -331,7 +326,7 @@ TableCallbacks::StringChanged(QListViewItem * item, int col, const QString & tex
 
       }
 
-      if(dirty == 0) {
+      if (dirty == 0) {
 
 	SaveButton->setEnabled(FALSE);
 
@@ -355,9 +350,9 @@ TableCallbacks::StringClicked(QListViewItem *item)
 
   value = item->text(0);
 
-  for(i = 0; i <= my_num_strings; i++) {
+  for (i = 0; i <= my_num_strings; i++) {
 
-    if(strncmp((my_rc_strings+i)->name, value.ascii(), 255) == 0) {
+    if (strncmp((my_rc_strings+i)->name, value.ascii(), 255) == 0) {
 
       my_status_bar->message((my_rc_strings+i)->comment);
       break;
@@ -379,9 +374,9 @@ TableCallbacks::KnobChanged(QListViewItem *item)
 
   foo = (QCheckListItem *) item;
 
-  for(i = 0; i < my_num_knobs; i++) {
+  for (i = 0; i < my_num_knobs; i++) {
 
-    if(strncmp(value.ascii(), (my_rc_knobs+i)->name, 255) == 0) {
+    if (strncmp(value.ascii(), (my_rc_knobs+i)->name, 255) == 0) {
 
       break;
 
@@ -390,7 +385,7 @@ TableCallbacks::KnobChanged(QListViewItem *item)
   }
 
 
-  if(foo->isOn() && (my_rc_knobs+i)->knob_val == KNOB_IS_NO) {
+  if (foo->isOn() && (my_rc_knobs+i)->knob_val == KNOB_IS_NO) {
 
 #ifdef VERBOSE_CONSOLE
     printf("Now %s is activated\n", value.ascii());
@@ -398,13 +393,13 @@ TableCallbacks::KnobChanged(QListViewItem *item)
 
     (my_rc_knobs+i)->knob_val = KNOB_IS_YES;
 
-    if((my_rc_knobs+i)->knob_orig == KNOB_IS_YES) {
+    if ((my_rc_knobs+i)->knob_orig == KNOB_IS_YES) {
 
-      if((my_rc_knobs+i)->user_added == USER_ADDED_NO) {
+      if ((my_rc_knobs+i)->user_added == USER_ADDED_NO) {
 
 	(my_rc_knobs+i)->modified = MODIFIED_NO;
 
-	if(dirty > 0) dirty--;
+	if (dirty > 0) dirty--;
 
       }
 
@@ -415,7 +410,7 @@ TableCallbacks::KnobChanged(QListViewItem *item)
 
     }
 
-  } else if(foo->isOn()==FALSE && (my_rc_knobs+i)->knob_val == KNOB_IS_YES) {
+  } else if (foo->isOn()==FALSE && (my_rc_knobs+i)->knob_val == KNOB_IS_YES) {
 
 #ifdef VERBOSE_CONSOLE
     printf("Now %s is deactivated\n", value.ascii());
@@ -423,13 +418,13 @@ TableCallbacks::KnobChanged(QListViewItem *item)
 
     (my_rc_knobs+i)->knob_val = KNOB_IS_NO;
 
-    if((my_rc_knobs+i)->knob_orig == KNOB_IS_NO) {
+    if ((my_rc_knobs+i)->knob_orig == KNOB_IS_NO) {
 
-      if((my_rc_knobs+i)->user_added == USER_ADDED_NO) {
+      if ((my_rc_knobs+i)->user_added == USER_ADDED_NO) {
 
 	(my_rc_knobs+i)->modified = MODIFIED_NO;
 
-	if(dirty > 0) dirty--;
+	if (dirty > 0) dirty--;
 
       }
 
@@ -445,7 +440,7 @@ TableCallbacks::KnobChanged(QListViewItem *item)
 
   my_status_bar->message((my_rc_knobs+i)->comment);
 
-  if(dirty == 0) {
+  if (dirty == 0) {
 
     SaveButton->setEnabled(FALSE);
 
@@ -472,14 +467,14 @@ save_geometry(void)
   newsize[0] = mw->width();
   newsize[1] = mw->height();
 
-  if(oldsize[0] != newsize[0] || oldsize[1] != newsize[1]) {
+  if (oldsize[0] != newsize[0] || oldsize[1] != newsize[1]) {
 
     homedir = getenv("HOME");
-    if(homedir == NULL) return;
+    if (homedir == NULL) return;
     snprintf(temp, FILENAME_MAX, "%s/%s", homedir, ".thefishrc");
-    fd=open(temp, O_WRONLY|O_CREAT|O_TRUNC, 0666);
-    if(fd == -1) return;
-    fp=fdopen(fd, "a");
+    fd = open(temp, O_WRONLY|O_CREAT|O_TRUNC, 0666);
+    if (fd == -1) return;
+    fp = fdopen(fd, "a");
     fprintf(fp, "geometry=%i,%i\n", newsize[0], newsize[1]);
     fclose(fp);
 
@@ -499,42 +494,42 @@ MyDialogs::DoSave()
   not_committed = 0;
   rc_file = getenv("FISH_RC");
 
-  if(dirty > 0) {
+  if (dirty > 0) {
 
     i = save_changes(my_rc_knobs, my_num_knobs,
 		     my_rc_strings, my_num_strings);
 
 
-    if(i == -1) {
+    if (i == -1) {
 
       not_committed = 1;			
 
     }
 
     /* Pop up window */
-    if(not_committed == 1) {
+    if (not_committed == 1) {
 
       snprintf(path_string, 1023, "Can't open '%s' for writing. Changes not saved.",
 	       rc_file != NULL ? rc_file : RC_FILE);
 
-      QMessageBox::critical( 0, "The Fish",
-			     path_string);
+      QMessageBox::critical(0, "The Fish",
+			    path_string);
 
     } else {
 
-      QMessageBox::information( 0, "The Fish",
-				"Changes saved.");
+      QMessageBox::information(0, "The Fish",
+			       "Changes saved.");
     }
 
 
   } else {
 
-    QMessageBox::information( 0, "The Fish",
-			      "There are no unsaved changes.");
+    QMessageBox::information(0, "The Fish",
+			     "There are no unsaved changes.");
 
   }
 
-  if(not_committed == 0) {
+  if (not_committed == 0) {
 
     dirty = 0;
     SaveButton->setEnabled(FALSE);
@@ -548,30 +543,30 @@ MyDialogs::DoAdd()
 {
   int i;
   int dupe,invalid;
-  char c,d;
+  char c, d;
   QString my_name, my_value, my_comment;
   QCheckListItem *foo;
   QListViewItem *element;
   char *new_name, *new_value, *new_comment;
 
-  QDialog *my_add_dialog = new QDialog( mw, "my_add_dialog", 0);
-  QBoxLayout *add_vbox = new QVBoxLayout( my_add_dialog);
+  QDialog *my_add_dialog = new QDialog(mw, "my_add_dialog", 0);
+  QBoxLayout *add_vbox = new QVBoxLayout(my_add_dialog);
 
-  QTable *table = new QTable( 3, 2, my_add_dialog);
+  QTable *table = new QTable(3, 2, my_add_dialog);
 
   add_vbox->addWidget(table);
 
-  table->setText( 0, 0, "Name");
+  table->setText(0, 0, "Name");
 
-  table->setText( 1, 0, "Value");
-  table->setText( 1, 1, "\"\"");
+  table->setText(1, 0, "Value");
+  table->setText(1, 1, "\"\"");
 
-  table->setText( 2, 0, "Optional comment");
+  table->setText(2, 0, "Optional comment");
 
-  table->setColumnReadOnly( 0, true);
+  table->setColumnReadOnly(0, true);
 
   table->adjustColumn(0);
-  table->setColumnWidth(1,180);
+  table->setColumnWidth(1, 180);
 
   table->setLeftMargin(0);
   table->setTopMargin(0);
@@ -583,15 +578,15 @@ MyDialogs::DoAdd()
   QPushButton *AddYesButton = new QPushButton("&OK", add_hbuttons, 0);
   QPushButton *AddNoButton = new QPushButton("&Cancel", add_hbuttons, 0);
 
-  QObject::connect( AddYesButton, SIGNAL(clicked()), my_add_dialog, SLOT(accept()));
-  QObject::connect( AddNoButton, SIGNAL(clicked()), my_add_dialog, SLOT(reject()));
+  QObject::connect(AddYesButton, SIGNAL(clicked()), my_add_dialog, SLOT(accept()));
+  QObject::connect(AddNoButton, SIGNAL(clicked()), my_add_dialog, SLOT(reject()));
 
   add_vbox->setResizeMode(QLayout::Auto);
   add_vbox->activate();
 
   my_add_dialog->setCaption("Add a new entry");
 
-  if(my_add_dialog->exec() == QDialog::Accepted) {
+  if (my_add_dialog->exec() == QDialog::Accepted) {
 
     dupe = 0;
     invalid = 0;
@@ -603,30 +598,19 @@ MyDialogs::DoAdd()
     new_value = (char *) my_value.ascii();
     new_comment = (char *) my_comment.ascii();
 
-    if(new_name == NULL || new_value == NULL) {
+    if (new_name == NULL || new_value == NULL) {
 
-      QMessageBox::critical( 0, "The Fish",
-			       "Name and Value cannot be null.");
+      QMessageBox::critical(0, "The Fish",
+			    "Name and Value cannot be null.");
 
       delete(my_add_dialog);
       return;
 
     }
 
-    for(i = 0; i < my_num_knobs; i++) {
+    for (i = 0; i < my_num_knobs; i++) {
 
-      if(strncmp(my_name.ascii(), (my_rc_knobs+i)->name, 255) == 0) {
-
-	dupe = 1;
-	break;
-
-      }
-
-    }
-
-    for(i = 0; i < my_num_strings; i++) {
-
-      if(strncmp(my_name.ascii(), (my_rc_strings+i)->name, 255) == 0) {
+      if (strncmp(my_name.ascii(), (my_rc_knobs+i)->name, 255) == 0) {
 
 	dupe = 1;
 	break;
@@ -635,10 +619,21 @@ MyDialogs::DoAdd()
 
     }
 
-    if(dupe == 1) {
+    for (i = 0; i < my_num_strings; i++) {
 
-      QMessageBox::critical( 0, "The Fish",
-			     "An entry with that name already exists.");
+      if (strncmp(my_name.ascii(), (my_rc_strings+i)->name, 255) == 0) {
+
+	dupe = 1;
+	break;
+
+      }
+
+    }
+
+    if (dupe == 1) {
+
+      QMessageBox::critical(0, "The Fish",
+			    "An entry with that name already exists.");
 
 
     } else {
@@ -646,10 +641,10 @@ MyDialogs::DoAdd()
       c = new_value[0];
       d = new_value[strlen(new_value)-1];
 
-      if(c != '"' || d != '"') {
+      if (c != '"' || d != '"') {
 
-	QMessageBox::critical( 0, "The Fish",
-			       "Value must begin and end with \".");
+	QMessageBox::critical(0, "The Fish",
+			      "Value must begin and end with \".");
 
 	delete(my_add_dialog);
 	return;
@@ -657,7 +652,7 @@ MyDialogs::DoAdd()
       }
 
       // It's a knob set to YES
-      if(strncasecmp(new_value, KNOB_YES, 255) == 0) {
+      if (strncasecmp(new_value, KNOB_YES, 255) == 0) {
 
 	(my_rc_knobs+my_num_knobs)->user_comment = 0;
 	(my_rc_knobs+my_num_knobs)->user_added = USER_ADDED_YES;
@@ -668,9 +663,9 @@ MyDialogs::DoAdd()
 	strncpy((my_rc_knobs+my_num_knobs)->name, new_name, 255);
 
 
-	if(new_comment != NULL) {
+	if (new_comment != NULL) {
 
-	  if(strlen(new_comment) > 1) {
+	  if (strlen(new_comment) > 1) {
 
 	    strncpy((my_rc_knobs+my_num_knobs)->comment, new_comment, 255);
 	    (my_rc_knobs+my_num_knobs)->user_comment = 1;
@@ -688,7 +683,7 @@ MyDialogs::DoAdd()
 	SaveButton->setEnabled(TRUE);
 
 	// It's a knob set to NO
-      } else if(strncasecmp(new_value, KNOB_NO, 255) == 0) {
+      } else if (strncasecmp(new_value, KNOB_NO, 255) == 0) {
 
 	(my_rc_knobs+my_num_knobs)->user_comment = 0;
 	(my_rc_knobs+my_num_knobs)->user_added = USER_ADDED_YES;
@@ -699,9 +694,9 @@ MyDialogs::DoAdd()
 	strncpy((my_rc_knobs+my_num_knobs)->name, new_name, 255);
 
 
-	if(new_comment != NULL) {
+	if (new_comment != NULL) {
 
-	  if(strlen(new_comment) > 1) {
+	  if (strlen(new_comment) > 1) {
 
 	    strncpy((my_rc_knobs+my_num_knobs)->comment, new_comment, 255);
 	    (my_rc_knobs+my_num_knobs)->user_comment = 1;
@@ -729,9 +724,9 @@ MyDialogs::DoAdd()
 	strncpy((my_rc_strings+my_num_strings)->value, new_value, 255);
 	strncpy((my_rc_strings+my_num_strings)->orig, new_value, 255);
 
-	if(new_comment != NULL) {
+	if (new_comment != NULL) {
 
-	  if(strlen(new_comment) > 1) {
+	  if (strlen(new_comment) > 1) {
 
 	    strncpy((my_rc_strings+my_num_strings)->comment, new_comment, 255);
 	    (my_rc_strings+my_num_strings)->user_comment = 1;
@@ -744,8 +739,8 @@ MyDialogs::DoAdd()
 				    (my_rc_strings+my_num_strings)->name, 
 				    (my_rc_strings+my_num_strings)->value);
 
-	element->setRenameEnabled( 0, FALSE);
-	element->setRenameEnabled( 1, TRUE);
+	element->setRenameEnabled(0, FALSE);
+	element->setRenameEnabled(1, TRUE);
 
 	my_num_strings++;
 	dirty++;

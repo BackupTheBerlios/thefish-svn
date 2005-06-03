@@ -177,8 +177,7 @@ main(int argc, char **argv)
 #endif
 
 #if defined(WITH_QT)
-    create_qt_ui(my_rc_defaults->knobs_ptr, my_rc_defaults->knobs_size,
-		 my_rc_defaults->string_ptr, my_rc_defaults->string_size,
+    create_qt_ui(my_rc_defaults,
 		 argc, argv);
 #endif
 

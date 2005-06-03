@@ -1,4 +1,4 @@
-.Dd Mar, 07 2004
+.Dd Mar, 13 2005
 .Os 
 .Dt "The Fish" 1 CON
 .Sh NAME
@@ -9,7 +9,7 @@
 .Op Fl cvh
 .Sh DESCRIPTION
 The Fish provides a graphical tool 
-.Po with both GTK+ and ncurses frontends
+.Po with GTK+, Qt and ncurses frontends
 .Pc 
 to manage and edit system variables stored in 
 .Pa /etc/defaults/rc.conf
@@ -38,10 +38,8 @@ Show help
 There are two kinds of entries in rc.conf: Knobs and Strings.
 Knobs can only be either YES or NO. Strings can have any value. To modify a 
 Knob simply click on the toggle button associated with it. To modify a string, edit the 
-value to your needs. The status of each entry is noted by small icon. A minus sign denotes that entry
-hasn't been modified. A floppy disk icon means that entry was modified or is new and, therefore, 
-needs to be saved. Selecting a row will print a little description about the variable in 
-the status bar.
+value to your needs. In the GTK+ version the status of each entry is noted by small icon. 
+A floppy disk icon means that entry was modified or is new and, therefore, needs to be saved. Selecting a row will print a little description about the variable in the status bar.
 .Sh Adding new entries  
 To add a new entry, simply press the 
 .Do
