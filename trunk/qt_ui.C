@@ -169,7 +169,7 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
     snprintf(temp, FILENAME_MAX, "%s/%s", homedir, ".thefishrc");
     fd=open(temp, O_RDONLY, 0);
 
-    if(fd! =-1 ) {
+    if(fd != -1 ) {
 
       i = lseek(fd, 0, SEEK_END);
       lseek(fd, 0, SEEK_SET);
