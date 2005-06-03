@@ -44,6 +44,14 @@ typedef struct rc_node {
 	
 } RC_NODE;
 
+typedef struct rc_conf {
+
+  RC_NODE *knobs_ptr;
+  int      knobs_size;
+  RC_NODE *string_ptr;
+  int      string_size;
+
+} RC_CONF;
 
 						
 #if defined(__FreeBSD__) || defined(__DragonFly__)
@@ -64,9 +72,9 @@ typedef struct rc_node {
 #define USER_ADDED_YES 0xEE
 #define USER_ADDED_NO 0
 
-int build_list(char *,int,RC_NODE **,int *,RC_NODE **,int *);
-int merge_lists(RC_NODE **,int *,RC_NODE **,int *,RC_NODE **,int *,RC_NODE **,int *);
+int build_list(char *, RC_CONF *);
+int merge_lists(RC_CONF *, RC_CONF *);
 
-void list_sort(RC_NODE **, int);
+void list_sort(RC_NODE *, int);
 
 #endif

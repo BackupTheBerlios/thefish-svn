@@ -49,24 +49,20 @@
 
 #include "ncurses_ui.h"
 
-void usage(void);
-void about(void);
+static void usage(void);
+static void about(void);
 void purge(void);
 
-char *defaults_rc_file, *rc_file;
+static char *defaults_rc_file, *rc_file;
 
 int
 main(int argc, char **argv)
 {
   int counter,retval;
-  int num_knobs, num_str;
-  RC_NODE *rc_knobs;
-  RC_NODE *rc_strings;
+  RC_CONF *my_rc_defaults;
   RC_NODE *current;
 
-  int num_knobs2, num_str2;
-  RC_NODE *rc_knobs2;
-  RC_NODE *rc_strings2;
+  RC_CONF *my_rc;
 
 #if !defined(NO_GUI)
   char *envtest;
@@ -112,34 +108,34 @@ main(int argc, char **argv)
 
   defaults_rc_file = getenv("FISH_RC_DEFAULTS");
   rc_file = getenv("FISH_RC");
-  rc_knobs = NULL;
-  rc_strings = NULL;
-  num_knobs = 0;
-  num_str = 0;
 
-  retval=build_list(defaults_rc_file != NULL ? \
-		    defaults_rc_file : RC_DEFAULTS_FILE,
-		    0, &rc_knobs, &num_knobs, &rc_strings, &num_str);
+  my_rc = malloc(sizeof(RC_CONF));
+  my_rc_defaults = malloc(sizeof(RC_CONF));
 
+  my_rc_defaults->knobs_ptr = NULL;
+  my_rc_defaults->string_ptr = NULL;
+  my_rc_defaults->knobs_size = 0;
+  my_rc_defaults->string_size = 0;
 
-  rc_knobs2 = NULL;
-  rc_strings2 = NULL;
-  num_knobs2 = 0;
-  num_str2 = 0;
+  retval = build_list(defaults_rc_file != NULL ? \
+		      defaults_rc_file : RC_DEFAULTS_FILE,
+		      my_rc_defaults);
 
+  my_rc->knobs_ptr = NULL;
+  my_rc->string_ptr = NULL;
+  my_rc->knobs_size = 0;
+  my_rc->string_size = 0;
 
-  retval=build_list(rc_file != NULL ? \
-		    rc_file : RC_FILE,
-		    0, &rc_knobs2, &num_knobs2, &rc_strings2, &num_str2);
+  retval = build_list(rc_file != NULL ? \
+		      rc_file : RC_FILE,
+		      my_rc);
 
 
   purge();
 
   /* merge data */
-  retval = merge_lists(&rc_knobs, &num_knobs,
-		       &rc_strings, &num_str,
-		       &rc_knobs2, &num_knobs2,
-		       &rc_strings2, &num_str2);
+  retval = merge_lists(my_rc_defaults,
+		       my_rc);
 
   if(retval == -1) {
 
@@ -149,23 +145,23 @@ main(int argc, char **argv)
   }
 
   /* Sort the lists */
-  list_sort(&rc_knobs, num_knobs);
-  list_sort(&rc_strings, num_str);
+  list_sort(my_rc_defaults->knobs_ptr, my_rc_defaults->knobs_size);
+  list_sort(my_rc_defaults->string_ptr, my_rc_defaults->string_size);
 
   counter = 0;
   current = NULL;
 
   /* Fix the problem with ncurses_ui not knowing about user_comments state */
-  current = rc_knobs;
-  for(counter = 0; counter < num_knobs; counter++) {
+  current = my_rc_defaults->knobs_ptr;
+  for(counter = 0; counter < my_rc_defaults->knobs_size; counter++) {
 
     current->user_comment = 0;
     current++;
 
   }
 
-  current = rc_strings;
-  for(counter = 0; counter < num_str; counter++) {
+  current = my_rc_defaults->string_ptr;
+  for(counter = 0; counter < my_rc_defaults->string_size; counter++) {
 
     current->user_comment = 0;
     current++;
@@ -176,16 +172,20 @@ main(int argc, char **argv)
   if(wantconsole == 0) {
 
 #if defined(WITH_GTK)
-    create_gtk_ui(rc_knobs, num_knobs, rc_strings, num_str);
+    create_gtk_ui(my_rc_defaults->knobs_ptr, my_rc_defaults->knobs_size,
+		  my_rc_defaults->string_ptr, my_rc_defaults->string_size);
 #endif
 
 #if defined(WITH_QT)
-    create_qt_ui(rc_knobs, num_knobs, rc_strings, num_str, argc, argv);
+    create_qt_ui(my_rc_defaults->knobs_ptr, my_rc_defaults->knobs_size,
+		 my_rc_defaults->string_ptr, my_rc_defaults->string_size,
+		 argc, argv);
 #endif
 
   } else {
 	
-    create_ncurses_ui(rc_knobs, num_knobs, rc_strings, num_str);
+    create_ncurses_ui(my_rc_defaults->knobs_ptr, my_rc_defaults->knobs_size,
+		      my_rc_defaults->string_ptr, my_rc_defaults->string_size);
 
   }
 
@@ -193,7 +193,7 @@ main(int argc, char **argv)
 
 }
 
-void
+static void
 usage(void)
 {
 
@@ -205,7 +205,7 @@ usage(void)
 
 }
 
-void
+static void
 about(void)
 {
 

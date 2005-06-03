@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2002-2004, Miguel Mendez. All rights reserved.
+  Copyright (c) 2002-2005, Miguel Mendez. All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -36,32 +36,30 @@
 static int parseline(RC_NODE *);
 int yylex(void);
 
-static int tmp_knobs,tmp_strings;
+static int tmp_knobs, tmp_strings;
 
 /* RC_NODEs that look like knobs but aren't */
 
-static char *except[]={ "swapfile" , "pccard_ifconfig", "nisdomainname", 
-		 "ip_portrange_first", "ip_portrange_last", "gif_interfaces",
-		 "defaultrouter", "ipv6_defaultrouter", "keymap", "keyrate",
-		 "keybell", "keychange", "cursor", "scrnmap", "font8x16",
-		 "font8x14", "font8x8", "saver", "mousechar_start", "dumpdev",
-		 "rand_irqs", "ipv6_default_interface", "ipv6_faith_prefix", 
-		 "isdn_fsdev", "isdn_screenflags", "amd_map_program",
-		 "gbde_devices", "extra_netfs_types", "pcvt_keymap", 
-		 "pcvt_keydel", "pcvt_keyrate", "pcvt_lines",
-		 "pcvt_blanktime", "pcvt_cursorh", "pcvt_cursorl", "sendmail_enable"
+static char *except[] = { "swapfile" , "pccard_ifconfig", "nisdomainname", 
+			  "ip_portrange_first", "ip_portrange_last", "gif_interfaces",
+			  "defaultrouter", "ipv6_defaultrouter", "keymap", "keyrate",
+			  "keybell", "keychange", "cursor", "scrnmap", "font8x16",
+			  "font8x14", "font8x8", "saver", "mousechar_start", "dumpdev",
+			  "rand_irqs", "ipv6_default_interface", "ipv6_faith_prefix", 
+			  "isdn_fsdev", "isdn_screenflags", "amd_map_program",
+			  "gbde_devices", "extra_netfs_types", "pcvt_keymap", 
+			  "pcvt_keydel", "pcvt_keyrate", "pcvt_lines",
+			  "pcvt_blanktime", "pcvt_cursorh", "pcvt_cursorl", "sendmail_enable"
 };
 
 
 static int pending;
 
 extern char *yytext;
-extern FILE*yyin;
+extern FILE *yyin;
 
 int
-build_list(char *filename, int len,
-	   RC_NODE **rc_knobs, int *num_knobs,
-	   RC_NODE **rc_str, int *num_str)
+build_list(char *filename, RC_CONF *my_rc)
 {
   RC_NODE scratch;
   RC_NODE *alpha;
@@ -82,7 +80,7 @@ build_list(char *filename, int len,
   pending = 0;
   retval = 0;
 
-  yyin=fopen(filename, "r");
+  yyin = fopen(filename, "r");
 
   /* First pass, build linked list of nodes */
   do {
@@ -97,19 +95,19 @@ build_list(char *filename, int len,
   } while(retval == 0);
 
   /* Second pass, build knob and strings list */
-  *rc_knobs = malloc(tmp_knobs*sizeof(RC_NODE ));
-  *rc_str = malloc(tmp_strings*sizeof(RC_NODE ));
-  memset(*rc_knobs, 0, (tmp_knobs*sizeof(RC_NODE )));
-  memset(*rc_str, 0, (tmp_strings*sizeof(RC_NODE )));
+  my_rc->knobs_ptr = malloc(tmp_knobs*sizeof(RC_NODE ));
+  my_rc->string_ptr = malloc(tmp_strings*sizeof(RC_NODE ));
+  memset(my_rc->knobs_ptr, 0, (tmp_knobs*sizeof(RC_NODE )));
+  memset(my_rc->string_ptr, 0, (tmp_strings*sizeof(RC_NODE )));
 
   tmp_knobs = 0;
   tmp_strings = 0;
 
   /* Preserve original pointers */
-  foo = *rc_knobs;
-  bar = *rc_str;
+  foo = my_rc->knobs_ptr;
+  bar = my_rc->string_ptr;
 
- 
+
   current = alpha;
   while(current->next != NULL) {
 
@@ -135,8 +133,8 @@ build_list(char *filename, int len,
 
   }
 
-  *num_knobs = tmp_knobs;
-  *num_str = tmp_strings;
+  my_rc->knobs_size = tmp_knobs;
+  my_rc->string_size = tmp_strings;
  
   fclose(yyin);
   return 0;
@@ -272,8 +270,7 @@ parseline(RC_NODE *current)
  * defaults list with the values in the rc list
  */
 int 
-merge_lists(RC_NODE **rc_knobs, int *num_knobs, RC_NODE **rc_str, int *num_str,
-	    RC_NODE **rc_knobs2, int *num_knobs2, RC_NODE **rc_str2, int *num_str2)
+merge_lists(RC_CONF *my_rc_defaults, RC_CONF *my_rc)
 {
   RC_NODE *rc_knobs_final;
   RC_NODE *rc_str_final;
@@ -282,20 +279,24 @@ merge_lists(RC_NODE **rc_knobs, int *num_knobs, RC_NODE **rc_str, int *num_str,
   int foo,j,k;
   int node_present;
 
-  total_nodes=*num_knobs;
+  total_nodes = my_rc_defaults->knobs_size;
 
   /* merge knobs */
-  rc_knobs_final = malloc( ((*num_knobs) + (*num_knobs2)) *sizeof(RC_NODE));
-  memset(rc_knobs_final,0, ( ((*num_knobs) + (*num_knobs2)) *sizeof(RC_NODE)));
-  memcpy(rc_knobs_final, (*rc_knobs), (*num_knobs)*sizeof(RC_NODE));
+  rc_knobs_final = malloc((my_rc_defaults->knobs_size + 
+			   my_rc->knobs_size) * sizeof(RC_NODE));
+  memset(rc_knobs_final, 0, ((my_rc_defaults->knobs_size +
+			      my_rc->knobs_size) * sizeof(RC_NODE)));
 
-  baz = *rc_knobs2;
+  memcpy(rc_knobs_final, my_rc_defaults->knobs_ptr, 
+	 my_rc_defaults->knobs_size * sizeof(RC_NODE));
+
+  baz = my_rc->knobs_ptr;
   bar = rc_knobs_final;
 
-  for(j=0; j<total_nodes; j++) {
+  for(j = 0; j<total_nodes; j++) {
 
-    baz = *rc_knobs2;
-    for(foo=0; foo<(*num_knobs2); foo++) {
+    baz = my_rc->knobs_ptr;
+    for(foo = 0; foo < my_rc->knobs_size; foo++) {
 
       if(!strncmp(bar->name, baz->name, 255)) {
 #ifdef VERBOSE_CONSOLE
@@ -315,15 +316,15 @@ merge_lists(RC_NODE **rc_knobs, int *num_knobs, RC_NODE **rc_str, int *num_str,
   }
 
   /* add values present in rc.conf but not in the defaults file */
-  total_nodes = (*num_knobs);
-  baz = *rc_knobs2;
+  total_nodes = my_rc_defaults->knobs_size;
+  baz = my_rc->knobs_ptr;
 
-  for(j=0; j<(*num_knobs2); j++) {
+  for(j = 0; j < my_rc->knobs_size; j++) {
 
     node_present = 0;
-    bar = *rc_knobs;
+    bar = my_rc_defaults->knobs_ptr;
    
-    for(k=0; k<(*num_knobs); k++) {
+    for(k = 0; k < my_rc_defaults->knobs_size; k++) {
 
       if(!strncmp(baz->name, bar->name, 255)) node_present = 1;
       bar++;
@@ -331,7 +332,7 @@ merge_lists(RC_NODE **rc_knobs, int *num_knobs, RC_NODE **rc_str, int *num_str,
     }
 
     aux = rc_knobs_final;
-    for(k=0; k<(total_nodes); k++) {
+    for(k = 0; k < total_nodes; k++) {
 
       if(!strncmp(baz->name, aux->name, 255)) {
 
@@ -359,21 +360,24 @@ merge_lists(RC_NODE **rc_knobs, int *num_knobs, RC_NODE **rc_str, int *num_str,
 
   }
 
-  *num_knobs = total_nodes;
-  *rc_knobs = rc_knobs_final;
+  my_rc_defaults->knobs_size = total_nodes;
+  my_rc_defaults->knobs_ptr = rc_knobs_final;
 
   /* merge strings */
-  rc_str_final = malloc(((*num_str)+(*num_str2)) *sizeof(RC_NODE));
-  memcpy(rc_str_final,(*rc_str), (*num_str)*sizeof(RC_NODE));
+  rc_str_final = malloc((my_rc_defaults->string_size + 
+			 my_rc->string_size) * sizeof(RC_NODE));
 
-  baz = *rc_str2;
+  memcpy(rc_str_final, my_rc_defaults->string_ptr, 
+	 my_rc_defaults->string_size * sizeof(RC_NODE));
+
+  baz = my_rc->string_ptr;
   bar = rc_str_final;
 
 
-  for(j=0; j<(*num_str); j++) {
+  for(j = 0; j < my_rc_defaults->string_size; j++) {
 
-    baz = *rc_str2;
-    for(foo=0; foo<(*num_str2); foo++) {
+    baz = my_rc->string_ptr;
+    for(foo = 0; foo < my_rc->string_size; foo++) {
 
       if(!strncmp(bar->name, baz->name, 255)) {
 
@@ -397,15 +401,15 @@ merge_lists(RC_NODE **rc_knobs, int *num_knobs, RC_NODE **rc_str, int *num_str,
   }
 
   /* add values present in rc.conf but not in the defaults file */
-  total_nodes = (*num_str);
+  total_nodes = my_rc_defaults->string_size;
 
-  baz = *rc_str2;
-  for(j=0; j<(*num_str2); j++) {
+  baz = my_rc->string_ptr;
+  for(j = 0; j < my_rc->string_size; j++) {
 
     node_present = 0;
-    bar = *rc_str;
+    bar = my_rc_defaults->string_ptr;
 
-    for(k=0; k<(*num_str); k++) {
+    for(k = 0; k < my_rc_defaults->string_size; k++) {
 
       if(!strncmp(baz->name, bar->name, 255)) node_present=1;
       bar++;
@@ -414,7 +418,7 @@ merge_lists(RC_NODE **rc_knobs, int *num_knobs, RC_NODE **rc_str, int *num_str,
 
 
     aux = rc_str_final;
-    for(k=0; k<(total_nodes); k++) {
+    for(k=0; k < total_nodes; k++) {
 
       if(!strncmp(baz->name, aux->name, 255)) {
 
@@ -446,8 +450,8 @@ merge_lists(RC_NODE **rc_knobs, int *num_knobs, RC_NODE **rc_str, int *num_str,
 
   }
 
-  *num_str = total_nodes;
-  *rc_str = rc_str_final;
+  my_rc_defaults->string_size = total_nodes;
+  my_rc_defaults->string_ptr = rc_str_final;
 
   /* everything went ok */
   return 0;
@@ -456,19 +460,19 @@ merge_lists(RC_NODE **rc_knobs, int *num_knobs, RC_NODE **rc_str, int *num_str,
 
 /* This sort routine sucks */
 void
-list_sort(RC_NODE **rc_data, int num)
+list_sort(RC_NODE *rc_data, int num)
 {
-  int i,j,retval,changed;
+  int i, j, retval, changed;
   RC_NODE *list;
   RC_NODE temp;
 
-  list = (*rc_data);
+  list = rc_data;
 
   do {
 
     changed = 0;
-    for(i=0; i<num-1; i++) {
-      for(j=i; j<num-1-i; j++) {
+    for(i = 0; i < num-1; i++) {
+      for(j = i; j < num-1-i; j++) {
 
 	retval = strncmp(list[j].name, list[j+1].name, 255);	
 
