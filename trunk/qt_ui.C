@@ -53,8 +53,14 @@
  */
 int oldsize[2];
 
+int dirty;
+
+QApplication *thefish;
+
 // C compat glue
 extern "C" int create_qt_ui(RC_NODE *, int, RC_NODE *, int, int, char **);
+
+void save_geometry(void);
 
 extern "C" int
 create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
@@ -69,7 +75,7 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   MiscDialogs mydialogs;
 
-  QApplication thefish( argc, argv);
+  QApplication *thefish = new QApplication( argc, argv);
 
   QMainWindow *mw = new QMainWindow;
 
@@ -94,10 +100,13 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   QHBox *hbuttons = new QHBox( vbox, 0, 0);
 
-  QPushButton SaveButton("Save", hbuttons, 0);
-  QPushButton AddButton("Add", hbuttons, 0);
-  QPushButton AboutButton("About", hbuttons, 0);
-  QPushButton QuitButton("Quit",  hbuttons, 0);
+  QPushButton SaveButton("&Save", hbuttons, 0);
+  QPushButton AddButton("&Add", hbuttons, 0);
+  QPushButton AboutButton("A&bout", hbuttons, 0);
+  QPushButton QuitButton("&Quit",  hbuttons, 0);
+
+  // No save for now...
+  SaveButton.setEnabled(FALSE);
 
   QObject::connect( &QuitButton, SIGNAL(clicked()), &mydialogs, SLOT(CheckSaved()));
   QObject::connect( &AboutButton, SIGNAL(clicked()), &mydialogs, SLOT(ShowAbout()));
@@ -142,11 +151,13 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   mw->setCaption( "The Fish " THE_FISH_VERSION);
   mw->setCentralWidget( vbox );
-  thefish.setMainWidget(mw);
+  thefish->setMainWidget(mw);
   mw->show();
   mw->resize(oldsize[0], oldsize[1]);
 
-  return thefish.exec();
+  dirty=0;
+
+  return thefish->exec();
 
 
 }
@@ -154,23 +165,29 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 void 
 MiscDialogs::CheckSaved()
 {
+  int retcode;
 
-  switch( QMessageBox::warning( 0, "The Fish",
-				"There are unsaved changes. "
-				"Quit anyway?\n\n",
-				"Yes",
-				"No", 0, 0, 1 ) ) 
+  if(dirty>0) {
 
-    {
+    retcode = QMessageBox::warning( 0, "The Fish",
+				    "There are unsaved changes. "
+				    "Quit anyway?\n\n",
+				    "Yes",
+				    "No", 0, 0, 1 );
 
-    case 0: // The user clicked the Yes button or pressed Enter
-      // try again
-      break;
-    case 1: // The user clicked the No or pressed Escape
-      // exit
-      break;
+    if(retcode == 0) {
+			
+      save_geometry();
+      thefish->exit(0);
 
     }
+
+  } else {
+
+    save_geometry();
+    thefish->exit(0);
+
+  }
 
 }
 
@@ -178,14 +195,23 @@ void
 MiscDialogs::ShowAbout()
 {
 
-  QMessageBox::information( 0, "The Fish",
-			    "The Fish "
-			    THE_FISH_VERSION
-			    "\nCopyright (c) 2002-2004, "
-			    "Miguel Mendez\n"
-			    "Shark icon (c) 2001-2003, Alan Smith\n"
-			    "E-Mail: <flynn@energyhq.es.eu.org>\n"
-			    "http://www.energyhq.es.eu.org/thefish.html\n",
-			    1, 0, 0 ); 
+  QMessageBox::about( 0, "About The Fish",
+		      "The Fish "
+		      THE_FISH_VERSION
+		      "\nCopyright (c) 2002-2004, "
+		      "Miguel Mendez\n"
+		      "Shark icon (c) 2001-2003, Alan Smith\n"
+		      "E-Mail: <flynn@energyhq.es.eu.org>\n"
+		      "http://www.energyhq.es.eu.org/thefish.html\n"
+		      ); 
 
 }
+
+void 
+save_geometry(void)
+{
+
+  printf("Salvando el geometra\n");
+
+}
+
