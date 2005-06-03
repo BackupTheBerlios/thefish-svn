@@ -23,36 +23,129 @@
 
   $Id$
 
+  Note: This code is quite suboptimal for two reasons: 1) I'm still learning how QT 
+  works and 2) I'm not really a fan of C++. To be honest I hate C++, but QT makes it
+  almost bearable.
+
 */
 
+#include <qhbox.h>
+#include <qvbox.h>
+#include <qlistview.h>
 #include <qobject.h>
 #include <qmessagebox.h>
 #include <qapplication.h>
+#include <qmainwindow.h>
 #include <qpushbutton.h>
+#include <qtabwidget.h>
+
+#include <fcntl.h>
+#include <stdio.h>
 
 #include "parser.h"
 #include "thefish.h"
 
 #include "qt_ui_priv.moc"
 
+/* Window geometry */
+/* Deprecated for file, we
+ * now use human readable data
+ */
+int oldsize[2];
+
 // C compat glue
 extern "C" int create_qt_ui(RC_NODE *, int, RC_NODE *, int, int, char **);
 
 extern "C" int
-create_qt_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str, int argc, char **argv)
+create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
+	     RC_NODE *rc_strings, int num_str, 
+	     int argc, char **argv)
 {
+  int i;
+  char *homedir;
+  char temp[FILENAME_MAX];
+  int fd;
+  FILE *fp;
 
   MiscDialogs mydialogs;
 
   QApplication thefish( argc, argv);
 
-  QPushButton hello( "Hello world!", 0 );
-  hello.resize( 100, 30 );
+  QMainWindow *mw = new QMainWindow;
 
-  QObject::connect( &hello, SIGNAL(clicked()), &mydialogs, SLOT(CheckSaved()) );
 
-  thefish.setMainWidget( &hello );
-  hello.show();
+  QVBox *vbox = new QVBox( mw, 0, 0);
+
+  QTabWidget main_tab( vbox, 0, 0);
+
+  QListView *knobs_table = new QListView;
+  QListView *strings_table = new QListView;
+
+  knobs_table->addColumn("S", -1);
+  knobs_table->addColumn("Name", -1);
+  knobs_table->addColumn("Enabled",-1);
+
+  strings_table->addColumn("S", -1);
+  strings_table->addColumn("Name", -1);
+  strings_table->addColumn("Value",-1);
+
+  main_tab.addTab(knobs_table, "Knobs");
+  main_tab.addTab(strings_table, "Strings");
+
+  QHBox *hbuttons = new QHBox( vbox, 0, 0);
+
+  QPushButton SaveButton("Save", hbuttons, 0);
+  QPushButton AddButton("Add", hbuttons, 0);
+  QPushButton AboutButton("About", hbuttons, 0);
+  QPushButton QuitButton("Quit",  hbuttons, 0);
+
+  QObject::connect( &QuitButton, SIGNAL(clicked()), &mydialogs, SLOT(CheckSaved()));
+  QObject::connect( &AboutButton, SIGNAL(clicked()), &mydialogs, SLOT(ShowAbout()));
+
+  /* Set the size.
+   * We're now using human readable data, handle the migration
+   * transparently for the user.
+   */
+  homedir=getenv("HOME");
+
+  if(homedir!=NULL) {
+
+    snprintf(temp, FILENAME_MAX, "%s/%s", homedir, ".thefishrc");
+    fd=open(temp, O_RDONLY, 0);
+
+    if(fd!=-1) {
+
+      i=lseek(fd, 0, SEEK_END);
+      lseek(fd, 0, SEEK_SET);
+
+      if(i==sizeof(oldsize)) {
+
+	read(fd, &oldsize[0], sizeof(oldsize));
+	close(fd);
+
+      } else {
+
+	fp=fdopen(fd, "r");
+	fscanf(fp, "geometry=%i,%i", &oldsize[0], &oldsize[1]);
+	fclose(fp);
+
+      }
+
+    } else  {
+      /* Set some default values */
+      oldsize[0]=400;
+      oldsize[1]=480;
+
+    }
+
+  }
+
+  mw->setCaption( "The Fish " THE_FISH_VERSION);
+  mw->setCentralWidget( vbox );
+  thefish.setMainWidget(mw);
+  mw->show();
+  mw->resize(oldsize[0], oldsize[1]);
+
   return thefish.exec();
 
 
@@ -62,21 +155,37 @@ void
 MiscDialogs::CheckSaved()
 {
 
-    switch( QMessageBox::warning( 0, "The Fish",
-				  "There are unsaved changes. "
-				  "Quit anyway?\n\n",
-				  "Yes",
-				  "No", 0, 0, 1 ) ) 
+  switch( QMessageBox::warning( 0, "The Fish",
+				"There are unsaved changes. "
+				"Quit anyway?\n\n",
+				"Yes",
+				"No", 0, 0, 1 ) ) 
 
-      {
+    {
 
-      case 0: // The user clicked the Yes button or pressed Enter
-        // try again
-        break;
-      case 1: // The user clicked the No or pressed Escape
-        // exit
-        break;
+    case 0: // The user clicked the Yes button or pressed Enter
+      // try again
+      break;
+    case 1: // The user clicked the No or pressed Escape
+      // exit
+      break;
 
-      }
+    }
+
+}
+
+void
+MiscDialogs::ShowAbout()
+{
+
+  QMessageBox::information( 0, "The Fish",
+			    "The Fish "
+			    THE_FISH_VERSION
+			    "\nCopyright (c) 2002-2004, "
+			    "Miguel Mendez\n"
+			    "Shark icon (c) 2001-2003, Alan Smith\n"
+			    "E-Mail: <flynn@energyhq.es.eu.org>\n"
+			    "http://www.energyhq.es.eu.org/thefish.html\n",
+			    1, 0, 0 ); 
 
 }
