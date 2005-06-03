@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2003-2004, Miguel Mendez. All rights reserved.
+  Copyright (c) 2004, Miguel Mendez. All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -25,6 +25,58 @@
 
 */
 
-#define THE_FISH_VERSION "0.5.2 \"Wuthering Heights\"."
-#define RC_DEFAULTS_FILE "/etc/defaults/rc.conf"
-#define RC_FILE "/etc/rc.conf"
+#include <qobject.h>
+#include <qmessagebox.h>
+#include <qapplication.h>
+#include <qpushbutton.h>
+
+#include "parser.h"
+#include "thefish.h"
+
+#include "qt_ui_priv.moc"
+
+// C compat glue
+extern "C" int create_qt_ui(RC_NODE *, int, RC_NODE *, int, int, char **);
+
+extern "C" int
+create_qt_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str, int argc, char **argv)
+{
+
+  MiscDialogs mydialogs;
+
+  QApplication thefish( argc, argv);
+
+  QPushButton hello( "Hello world!", 0 );
+  hello.resize( 100, 30 );
+
+  QObject::connect( &hello, SIGNAL(clicked()), &mydialogs, SLOT(CheckSaved()) );
+
+  thefish.setMainWidget( &hello );
+  hello.show();
+  return thefish.exec();
+
+
+}
+
+void 
+MiscDialogs::CheckSaved()
+{
+
+    switch( QMessageBox::warning( 0, "The Fish",
+				  "There are unsaved changes. "
+				  "Quit anyway?\n\n",
+				  "Yes",
+				  "No", 0, 0, 1 ) ) 
+
+      {
+
+      case 0: // The user clicked the Yes button or pressed Enter
+        // try again
+        break;
+      case 1: // The user clicked the No or pressed Escape
+        // exit
+        break;
+
+      }
+
+}

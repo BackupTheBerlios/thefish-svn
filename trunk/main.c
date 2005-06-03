@@ -32,7 +32,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
-#if !defined(NO_GUI)
+#if !defined(NO_GUI) && !defined(WITH_QT)
 #include <gtk/gtk.h>
 #endif
 
@@ -40,7 +40,11 @@
 #include "thefish.h"
 
 #if !defined(NO_GUI)
+#if !defined(WITH_QT)
 #include "gtk_ui.h"
+#else
+#include "qt_ui.h"
+#endif
 #endif
 
 #include "ncurses_ui.h"
@@ -72,7 +76,7 @@ main(int argc, char **argv)
 
   wantconsole=0;
 
-#if !defined(NO_GUI)	
+#if !defined(NO_GUI)
   envtest=getenv("DISPLAY");
   if(envtest==NULL) wantconsole=1;
 #else
@@ -105,7 +109,7 @@ main(int argc, char **argv)
 
   }
 
-#if !defined(NO_GUI)	
+#if !defined(NO_GUI) && !defined(WITH_QT)	
   if(wantconsole==0) gtk_init (&argc, &argv);
 #endif
 
@@ -172,8 +176,13 @@ main(int argc, char **argv)
   /* Launch UI */
   if(wantconsole==0) {
 
-#if !defined(NO_GUI)	
+#if !defined(NO_GUI)
+#if !defined(WITH_QT)
     create_gtk_ui(rc_knobs, num_knobs, rc_strings, num_str);
+#else
+    printf("QT path comes here...\n");
+    create_qt_ui(rc_knobs, num_knobs, rc_strings, num_str, argc, argv);
+#endif
 #endif
 
   } else {

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2003-2004, Miguel Mendez. All rights reserved.
+  Copyright (c) 2004, Miguel Mendez. All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -25,6 +25,6 @@
 
 */
 
-#define THE_FISH_VERSION "0.5.2 \"Wuthering Heights\"."
-#define RC_DEFAULTS_FILE "/etc/defaults/rc.conf"
-#define RC_FILE "/etc/rc.conf"
+int create_qt_ui(RC_NODE *, int, RC_NODE *, int, int, char **);
+
+

@@ -101,7 +101,8 @@ int gb_dirty=0;
 /* This one needs to be global, as it will be altered when adding new entries */
 dialogMenuItem *knobs_it,*str_it;
 
-/* This is the main function. It builds the menus and sets the appropriate
+/*
+ * This is the main function. It builds the menus and sets the appropriate
  * callbacks. Note that when we add entry we re-enter this function to generate
  * the new menus, as I found no other way of doing it with libdialog.
  */
@@ -145,7 +146,8 @@ create_ncurses_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_st
   knobs_it[0].fire=NULL;
   knobs_it[1].prompt=back_str;
 
-  /* Generate knobs menu
+  /*
+   * Generate knobs menu
    * it begins with 2 because the first two items are part of the
    * menu structure 
    */
@@ -530,7 +532,7 @@ int
 show_about(dialogMenuItem *tmp)
 {
 
-  dialog_notify("       The Fish "
+  dialog_notify("           The Fish "
 		THE_FISH_VERSION
 		"\n"
 		"        A user friendly ncurses/GTK rc.conf editor.\n"
@@ -540,7 +542,8 @@ show_about(dialogMenuItem *tmp)
 
 }
 
-/* This callback syncs menu info with RC_NODE structures
+/*
+ * This callback syncs menu info with RC_NODE structures
  * when the user modifies a knob
  */
 int
@@ -591,7 +594,8 @@ dmenuVarCheck(dialogMenuItem *item)
 
 }
 
-/* The edit callback, called when the user wants to
+/*
+ * The edit callback, called when the user wants to
  * change a string.
  */
 int 
