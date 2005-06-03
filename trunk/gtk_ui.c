@@ -304,7 +304,7 @@ create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
 
   about_button = gtk_button_new();
   about_icon = gtk_image_new_from_stock(GTK_STOCK_PROPERTIES, GTK_ICON_SIZE_MENU);
-  about_label = gtk_label_new("About");
+  about_label = gtk_label_new_with_mnemonic("A_bout");
   about_hbox = gtk_hbox_new(FALSE, 2);
   about_align = gtk_alignment_new(0.5, 0.5, 0.0, 0.0);
   gtk_box_pack_start(GTK_BOX(about_hbox), about_icon, FALSE, FALSE, 0);
