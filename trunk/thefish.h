@@ -27,7 +27,7 @@
 #ifndef THE_FISH_H
 #define THE_FISH_H
 
-#define THE_FISH_VERSION "0.6.4 \"Spin The Black Circle\"."
+#define THE_FISH_VERSION "0.6.5 \"The Beekeeper\""
 #define RC_DEFAULTS_FILE "/etc/defaults/rc.conf"
 #define RC_FILE "/etc/rc.conf"
 

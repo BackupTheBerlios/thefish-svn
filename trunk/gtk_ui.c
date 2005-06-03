@@ -136,6 +136,9 @@ static int oldsize[2];
 /* For the status bar */
 static guint old_context_id;
 
+/* For the about dialog */
+static GdkPixbuf *icon64_pixbuf;
+
 /* This funcion creates the main UI */
 int
 create_gtk_ui(RC_CONF *my_rc)
@@ -170,7 +173,6 @@ create_gtk_ui(RC_CONF *my_rc)
   GdkPixbuf *icon16_pixbuf;
   GdkPixbuf *icon32_pixbuf;
   GdkPixbuf *icon48_pixbuf;
-  GdkPixbuf *icon64_pixbuf;
   GList *icon_list = NULL;
 
   GtkWidget *scrolled_window1;
@@ -284,7 +286,13 @@ create_gtk_ui(RC_CONF *my_rc)
   quit_button = gtk_button_new_from_stock(GTK_STOCK_QUIT);
 
   about_button = gtk_button_new();
+
+#if(GTK_MINOR_VERSION>=6)
+  about_icon = gtk_image_new_from_stock(GTK_STOCK_ABOUT, GTK_ICON_SIZE_MENU);
+#else
   about_icon = gtk_image_new_from_stock(GTK_STOCK_PROPERTIES, GTK_ICON_SIZE_MENU);
+#endif
+
   about_label = gtk_label_new_with_mnemonic("A_bout");
   about_hbox = gtk_hbox_new(FALSE, 2);
   about_align = gtk_alignment_new(0.5, 0.5, 0.0, 0.0);
@@ -812,7 +820,7 @@ str_tree_on_row(GtkTreeSelection *treeselection,
 
 /*
  * If a string is modified by the user, this 
- * function will be called. It finds which widget
+ * function will be called. It finds out which widget
  * has been modified and syncs the new entry value
  * with the value stored in the RC_NODE structure.
  */
@@ -980,6 +988,57 @@ knob_toggled_callback(GtkCellRendererToggle *cell,
 static void
 about_pressed(GtkWidget *widget, gpointer data)
 {
+#if(GTK_MINOR_VERSION>=6)
+
+  const gchar *authors[] = {
+    "Miguel Mendez <flynn@energyhq.es.eu.org>",
+    NULL
+  };
+
+  const gchar *artists[] = {
+    "Alan Smith <alan@toonart.co.uk>",
+    NULL
+  };
+
+  const gchar *comments = 
+    "A user friendly rc.conf editor";
+
+  const gchar *license =
+    "Copyright (c) 2002-2005, Miguel Mendez. All rights reserved.\n"
+    ""
+    "Redistribution and use in source and binary forms, with or without\n"
+    "modification, are permitted provided that the following conditions are met:\n"
+    "\n"
+    "* Redistributions of source code must retain the above copyright notice,\n"
+    "this list of conditions and the following disclaimer.\n"
+    "* Redistributions in binary form must reproduce the above copyright notice,\n"
+    "this list of conditions and the following disclaimer in the documentation\n"
+    "and/or other materials provided with the distribution.\n"
+    "\n"
+    "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\n"
+    "AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\n"
+    "IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\n"
+    "DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE\n"
+    "FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\n"
+    "DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\n"
+    "SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\n"
+    "CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\n"
+    "OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
+    "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n";
+
+  gtk_show_about_dialog(GTK_WINDOW(window),
+			"authors", authors,
+			"artists", artists,
+			"copyright", "(C) 2002-2005 Miguel Mendez",
+			"comments", comments,
+			"license", license,
+			"logo", icon64_pixbuf,
+			"name", "The Fish",
+			"version", THE_FISH_VERSION,
+			"website", "http://www.energyhq.es.eu.org/thefish.html",
+			NULL);
+
+#else
 
   GtkWidget *dialog;
 
@@ -997,6 +1056,8 @@ about_pressed(GtkWidget *widget, gpointer data)
 
   gtk_dialog_run(GTK_DIALOG(dialog));
   gtk_widget_destroy(dialog);
+
+#endif
 
 }
 

@@ -184,8 +184,7 @@ main(int argc, char **argv)
 
   } else {
 	
-    create_ncurses_ui(my_rc_defaults->knobs_ptr, my_rc_defaults->knobs_size,
-		      my_rc_defaults->string_ptr, my_rc_defaults->string_size);
+    create_ncurses_ui(my_rc_defaults);
 
   }
 

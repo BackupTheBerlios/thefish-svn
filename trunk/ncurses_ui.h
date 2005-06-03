@@ -27,7 +27,7 @@
 #ifndef NCURSES_UI_H
 #define NCURSES_UI_H
 
-int create_ncurses_ui(RC_NODE *, int, RC_NODE *, int);
+int create_ncurses_ui(RC_CONF *);
 
 #endif
 
