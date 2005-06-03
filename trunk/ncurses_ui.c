@@ -67,6 +67,7 @@ DMenu *MenuAdd;
 int	StatusLine;
 
 DMenu MenuInitial = {
+
   DMENU_NORMAL_TYPE,
   "The Fish Main Menu",
   "Select one of the options below by using the arrow keys or typing the\n"
@@ -82,21 +83,22 @@ DMenu MenuInitial = {
 	{ "Save","Save changes",NULL, commit_data },
 	{ "About","About The Fish",NULL, show_about},
 	{ NULL } },
+
 };
 
-char KnobsTitle[]="Knobs Menu";
-char KnobsPrompt[]="A checked entry means that knob is set to YES";
-char StringsTitle[]="Strings Menu";
-char StringsPrompt[]="Select a String you wish to edit";
-char emptyline[]="";
-char data_yes[]="YES";
-char data_no[]="NO";
-char back_str[]="Back to Main";
-char change_str[]="Change";
-char edit_str[]="Edit Entry";
+char KnobsTitle[] = "Knobs Menu";
+char KnobsPrompt[] = "A checked entry means that knob is set to YES";
+char StringsTitle[] = "Strings Menu";
+char StringsPrompt[] = "Select a String you wish to edit";
+char emptyline[] = "";
+char data_yes[] = "YES";
+char data_no[] = "NO";
+char back_str[] = "Back to Main";
+char change_str[] = "Change";
+char edit_str[] = "Edit Entry";
 RC_NODE *gb_knobs,*gb_strings;
 int gb_num_knobs, gb_num_str;
-int gb_dirty=0;
+int gb_dirty = 0;
 
 /* This one needs to be global, as it will be altered when adding new entries */
 dialogMenuItem *knobs_it,*str_it;
@@ -107,149 +109,153 @@ dialogMenuItem *knobs_it,*str_it;
  * the new menus, as I found no other way of doing it with libdialog.
  */
 int
-create_ncurses_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
+create_ncurses_ui(RC_NODE *rc_knobs, int num_knobs,
+		  RC_NODE *rc_strings, int num_str)
 {
   WINDOW *scratch;
   int i;
-  int screen_x,screen_y;
+  int screen_x, screen_y;
   int choice, scroll, curr, max, status;
   int really_exit;
   char *term_type;
 
   /* Get terminal and set title if it's an [axw]term */
-  term_type=getenv("TERM");
-  if(term_type!=NULL && strncmp(++term_type,"term",4)==0) {
+  term_type = getenv("TERM");
+  if(term_type != NULL && strncmp(++term_type,"term",4) == 0) {
+
     printf("\033]0;The Fish "
 	   THE_FISH_VERSION
 	   "\007");
+
   }
 
   /* Get terminal geometry */
-  scratch=initscr();
-  screen_x=COLS;
-  screen_y=LINES;
+  scratch = initscr();
+  screen_x = COLS;
+  screen_y = LINES;
   endwin();
 
   /* Init the dialog system */
   init_dialog();
 
-  gb_num_knobs= num_knobs;
-  gb_num_str= num_str;
-  gb_knobs=rc_knobs;
-  gb_strings=rc_strings;
+  gb_num_knobs = num_knobs;
+  gb_num_str = num_str;
+  gb_knobs = rc_knobs;
+  gb_strings = rc_strings;
 
   /* Allocate memory for knobs + possible user additions */
-  knobs_it=malloc(num_knobs*2*sizeof(dialogMenuItem));
-  memset(knobs_it,0,num_knobs*2*sizeof(dialogMenuItem));
+  knobs_it = malloc(num_knobs*2*sizeof(dialogMenuItem));
+  memset(knobs_it, 0, num_knobs*2*sizeof(dialogMenuItem));
 
-  knobs_it[0].prompt=change_str;
-  knobs_it[0].fire=NULL;
-  knobs_it[1].prompt=back_str;
+  knobs_it[0].prompt = change_str;
+  knobs_it[0].fire = NULL;
+  knobs_it[1].prompt = back_str;
 
   /*
    * Generate knobs menu
    * it begins with 2 because the first two items are part of the
    * menu structure 
    */
-  for(i=2;i<num_knobs+2;i++) {
+  for(i=2; i<num_knobs+2; i++) {
 
-    knobs_it[i].title="";
-    knobs_it[i].prompt=rc_knobs[i-2].name;
-    knobs_it[i].checked=dmenuVarCheck; 
-    knobs_it[i].fire=dmenuSetVariable;
-    knobs_it[i].selected=NULL;
-    knobs_it[i].data= malloc(16);
-    knobs_it[i].aux=i-2;	/* keep track of knobs <-> menu entry relation */
-    if(rc_knobs[i-2].knob_val== KNOB_IS_YES) {
+    knobs_it[i].title = "";
+    knobs_it[i].prompt = rc_knobs[i-2].name;
+    knobs_it[i].checked = dmenuVarCheck; 
+    knobs_it[i].fire = dmenuSetVariable;
+    knobs_it[i].selected = NULL;
+    knobs_it[i].data = malloc(16);
+    knobs_it[i].aux = i-2;	/* keep track of knobs <-> menu entry relation */
+    if(rc_knobs[i-2].knob_val == KNOB_IS_YES) {
 
-      strcpy(knobs_it[i].data,"YES");
+      strcpy(knobs_it[i].data, "YES");
 
     } else {
 
-      strcpy(knobs_it[i].data,"NO");
+      strcpy(knobs_it[i].data, "NO");
 
     }
 
-    knobs_it[i].lbra='[';
-    knobs_it[i].mark='X';
-    knobs_it[i].rbra=']';
+    knobs_it[i].lbra = '[';
+    knobs_it[i].mark = 'X';
+    knobs_it[i].rbra = ']';
 
   }
 
-  MenuKnobs=malloc(sizeof(DMenu)+num_knobs*2*sizeof(dialogMenuItem));
-  memset(MenuKnobs,0,sizeof(DMenu)+num_knobs*2*sizeof(dialogMenuItem));
+  MenuKnobs = malloc(sizeof(DMenu)+num_knobs*2*sizeof(dialogMenuItem));
+  memset(MenuKnobs, 0, sizeof(DMenu)+num_knobs*2*sizeof(dialogMenuItem));
 
-  MenuKnobs->type=DMENU_CHECKLIST_TYPE;
-  MenuKnobs->title=KnobsTitle;
-  MenuKnobs->prompt=KnobsPrompt;
-  MenuKnobs->helpline=NULL;
-  MenuKnobs->helpfile=NULL;
+  MenuKnobs->type = DMENU_CHECKLIST_TYPE;
+  MenuKnobs->title = KnobsTitle;
+  MenuKnobs->prompt = KnobsPrompt;
+  MenuKnobs->helpline = NULL;
+  MenuKnobs->helpfile = NULL;
 
-  for(i=0;i<num_knobs+2;i++) {
+  for(i=0; i<num_knobs+2; i++) {
 
-    memcpy(&MenuKnobs->items[i],&knobs_it[i],sizeof(dialogMenuItem));
+    memcpy(&MenuKnobs->items[i], &knobs_it[i], sizeof(dialogMenuItem));
 
   }
 
   /* Allocate memory for strings + possible user additions */
-  str_it=malloc(num_str*2*sizeof(dialogMenuItem));
-  memset(str_it,0,num_str*2*sizeof(dialogMenuItem));
+  str_it = malloc(num_str*2*sizeof(dialogMenuItem));
+  memset(str_it, 0, num_str*2*sizeof(dialogMenuItem));
 
-  str_it[0].prompt=edit_str;
-  str_it[0].fire=NULL;
-  str_it[1].prompt=back_str;
-  str_it[1].fire=NULL;
+  str_it[0].prompt = edit_str;
+  str_it[0].fire = NULL;
+  str_it[1].prompt = back_str;
+  str_it[1].fire = NULL;
 
   /* Generate strings menu */
-  for(i=2;i<num_str+2;i++) {
+  for(i=2; i<num_str+2; i++) {
 
-    str_it[i].prompt=rc_strings[i-2].name;
-    str_it[i].title=rc_strings[i-2].value;
-    str_it[i].checked=NULL;
-    str_it[i].fire=edit_callback;
-    str_it[i].selected=NULL;
-    str_it[i].data=NULL;
-    str_it[i].lbra='[';
-    str_it[i].mark='X';
-    str_it[i].rbra=']';
-    str_it[i].aux=i-2;	/* keep track of str <-> menu entry relation */
-
-  }
-
-
-  MenuStrings=malloc(sizeof(DMenu)+num_str*2*sizeof(dialogMenuItem));
-  memset(MenuStrings,0,sizeof(DMenu)+num_str*2*sizeof(dialogMenuItem));
-
-  MenuStrings->type=DMENU_NORMAL_TYPE;
-  MenuStrings->title=StringsTitle;
-  MenuStrings->prompt=StringsPrompt;
-  MenuStrings->helpline=NULL;
-  MenuStrings->helpfile=NULL;
-
-  for(i=0;i<num_str+2;i++) {
-
-    memcpy(&MenuStrings->items[i],&str_it[i],sizeof(dialogMenuItem));
+    str_it[i].prompt = rc_strings[i-2].name;
+    str_it[i].title = rc_strings[i-2].value;
+    str_it[i].checked = NULL;
+    str_it[i].fire = edit_callback;
+    str_it[i].selected = NULL;
+    str_it[i].data = NULL;
+    str_it[i].lbra = '[';
+    str_it[i].mark = 'X';
+    str_it[i].rbra = ']';
+    str_it[i].aux = i-2;	/* keep track of str <-> menu entry relation */
 
   }
 
-  MenuInitial.items[2].data=MenuKnobs;
-  MenuInitial.items[3].data=MenuStrings;
+
+  MenuStrings = malloc(sizeof(DMenu)+num_str*2*sizeof(dialogMenuItem));
+  memset(MenuStrings, 0, sizeof(DMenu)+num_str*2*sizeof(dialogMenuItem));
+
+  MenuStrings->type = DMENU_NORMAL_TYPE;
+  MenuStrings->title = StringsTitle;
+  MenuStrings->prompt = StringsPrompt;
+  MenuStrings->helpline = NULL;
+  MenuStrings->helpfile = NULL;
+
+  for(i=0; i<num_str+2; i++) {
+
+    memcpy(&MenuStrings->items[i], &str_it[i], sizeof(dialogMenuItem));
+
+  }
+
+  MenuInitial.items[2].data = MenuKnobs;
+  MenuInitial.items[3].data = MenuStrings;
 
   dialog_clear();
-  status=0;
-  really_exit=0;
+  status = 0;
+  really_exit = 0;
 
-  while(really_exit==0) {
+  while(really_exit == 0) {
 
     choice = scroll = curr = max = 0;
     dmenuOpen(&MenuInitial, &choice, &scroll, &curr, &max, TRUE);
-    if(gb_dirty==1) {
 
-      if (!msgNoYes("There are unsaved changes. Exit anyway?\n")) really_exit=1;
+    if(gb_dirty == 1) {
+
+      if (!msgNoYes("There are unsaved changes. Exit anyway?\n")) really_exit = 1;
 
     } else {
 
-      really_exit=1;
+      really_exit = 1;
 
     }
 
@@ -436,72 +442,72 @@ commit_data(dialogMenuItem *tmp)
   char fish_header[255],ctime_buf[255];
   time_t comm_time;
 
-  if(gb_dirty==1) {
+  if(gb_dirty == 1) {
 
-    rc_file=getenv("FISH_RC");
+    rc_file = getenv("FISH_RC");
 
-    if(rc_file!=NULL) {
+    if(rc_file != NULL) {
 	
-      fd=fopen(rc_file,"a");
+      fd=fopen(rc_file, "a");
 
     } else { 
 
-      fd=fopen(RC_FILE,"a");
+      fd=fopen(RC_FILE, "a");
 
     }
 
-    if(fd!=NULL) {
+    if(fd != NULL) {
 
-      comm_time=time(NULL);
-      snprintf(fish_header,255,"\n#The Fish generated deltas - %s",
-	       ctime_r(&comm_time,ctime_buf));
-      fprintf(fd,fish_header);
+      comm_time = time(NULL);
+      snprintf(fish_header, 255, "\n# The Fish generated deltas - %s",
+	       ctime_r(&comm_time, ctime_buf));
+      fprintf(fd, fish_header);
 
-      for(i=0;i<=gb_num_knobs;i++) {
+      for(i=0; i<=gb_num_knobs; i++) {
 
-	if(gb_knobs[i].modified==MODIFIED_YES) {
+	if(gb_knobs[i].modified == MODIFIED_YES) {
 
-	  if(gb_knobs[i].user_comment==0) {
+	  if(gb_knobs[i].user_comment == 0) {
 
 	    fprintf(fd,"%s=%s\n",gb_knobs[i].name,
 		    gb_knobs[i].knob_val == KNOB_IS_YES ? KNOB_YES : KNOB_NO);
 
 	  } else {
 
-	    fprintf(fd,"%s=%s\t# %s\n",gb_knobs[i].name,
+	    fprintf(fd,"%s=%s\t# %s\n", gb_knobs[i].name,
 		    gb_knobs[i].knob_val == KNOB_IS_YES ? KNOB_YES : KNOB_NO,
 		    gb_knobs[i].comment);
 
 	  }
 
-	  gb_knobs[i].user_comment=0;
-	  gb_knobs[i].modified=MODIFIED_NO;
-	  gb_knobs[i].user_added=USER_ADDED_NO;
-	  gb_knobs[1].knob_orig=gb_knobs[1].knob_val;
+	  gb_knobs[i].user_comment = 0;
+	  gb_knobs[i].modified = MODIFIED_NO;
+	  gb_knobs[i].user_added = USER_ADDED_NO;
+	  gb_knobs[1].knob_orig = gb_knobs[1].knob_val;
 
 	}
 
       }
 
-      for(i=0;i<=gb_num_str;i++) {
+      for(i=0; i<=gb_num_str; i++) {
 
-	if(gb_strings[i].modified==MODIFIED_YES) {
+	if(gb_strings[i].modified == MODIFIED_YES) {
 
-	  if(gb_strings[i].user_comment==0) {
+	  if(gb_strings[i].user_comment == 0) {
 
-	    fprintf(fd,"%s=%s\n",gb_strings[i].name,\
+	    fprintf(fd,"%s=%s\n", gb_strings[i].name,\
 		    gb_strings[i].value);
 
 	  } else {
 
-	    fprintf(fd,"%s=%s\t# %s\n",gb_strings[i].name,\
-		    gb_strings[i].value,gb_strings[i].comment);
+	    fprintf(fd,"%s=%s\t# %s\n", gb_strings[i].name,\
+		    gb_strings[i].value, gb_strings[i].comment);
 
 	  }
 
-	  gb_strings[i].user_comment=0;
-	  gb_strings[i].modified=MODIFIED_NO;
-	  gb_strings[i].user_added=USER_ADDED_NO;
+	  gb_strings[i].user_comment = 0;
+	  gb_strings[i].modified = MODIFIED_NO;
+	  gb_strings[i].user_added = USER_ADDED_NO;
 
 	}
 
@@ -521,7 +527,7 @@ commit_data(dialogMenuItem *tmp)
 
   }
 	
-  gb_dirty=0;
+  gb_dirty = 0;
 
   return TRUE;
 
@@ -532,7 +538,7 @@ int
 show_about(dialogMenuItem *tmp)
 {
 
-  dialog_notify("             The Fish "
+  dialog_notify("               The Fish "
 		THE_FISH_VERSION
 		"\n"
 		"      A user friendly ncurses/GTK+/Qt rc.conf editor.\n"
@@ -550,30 +556,30 @@ int
 dmenuSetVariable(dialogMenuItem *tmp)
 {
 
-  if(!strcmp(tmp->data,"YES")) {
+  if(!strcmp(tmp->data, "YES")) {
 
-    strcpy(tmp->data,"NO");
-    gb_knobs[tmp->aux].knob_val=KNOB_IS_NO;		
+    strcpy(tmp->data, "NO");
+    gb_knobs[tmp->aux].knob_val = KNOB_IS_NO;		
 
   } else {
 
-    strcpy(tmp->data,"YES");
-    gb_knobs[tmp->aux].knob_val=KNOB_IS_YES;	
+    strcpy(tmp->data, "YES");
+    gb_knobs[tmp->aux].knob_val = KNOB_IS_YES;	
 
   }
 
   if(gb_knobs[tmp->aux].knob_val == gb_knobs[tmp->aux].knob_orig
-     && gb_knobs[tmp->aux].user_added==USER_ADDED_NO) {
+     && gb_knobs[tmp->aux].user_added == USER_ADDED_NO) {
 
-    gb_knobs[tmp->aux].modified=MODIFIED_NO;
+    gb_knobs[tmp->aux].modified = MODIFIED_NO;
 
   } else {
 
-    gb_knobs[tmp->aux].modified=MODIFIED_YES;
+    gb_knobs[tmp->aux].modified = MODIFIED_YES;
 
   }
 
-  gb_dirty=1;
+  gb_dirty = 1;
   return DITEM_SUCCESS;
 
 }
@@ -582,7 +588,7 @@ int
 dmenuVarCheck(dialogMenuItem *item)
 {
 
-  if(!strcmp(item->data,"YES")) {
+  if(!strcmp(item->data, "YES")) {
 
     return TRUE;
 
@@ -605,33 +611,33 @@ edit_callback(dialogMenuItem *item)
   int retcode,i;
   char result[256];
 
-  i=item->aux;
-  strncpy(result,gb_strings[i].value,255);
-  retcode=dialog_inputbox(item->prompt, "", 8,64,result);
+  i = item->aux;
+  strncpy(result, gb_strings[i].value, 255);
+  retcode = dialog_inputbox(item->prompt, "", 8, 64, result);
 
-  if(retcode==0) {
+  if(retcode == 0) {
 
     /* Sanity check */
-    if(result[0]!='"'||result[strlen(result)-1]!='"') {
+    if(result[0] != '"' || result[strlen(result)-1] != '"') {
 
       dialog_notify("Value must begin and end with '\"'.");
 
     } else {
 
-      strncpy(gb_strings[i].value,result,255);
+      strncpy(gb_strings[i].value, result, 255);
 
-      if(!strncmp(gb_strings[i].value,gb_strings[i].orig,255)
-	 && gb_strings[i].user_added==USER_ADDED_NO) {
+      if(!strncmp(gb_strings[i].value, gb_strings[i].orig, 255)
+	 && gb_strings[i].user_added == USER_ADDED_NO) {
 
-	gb_strings[i].modified=MODIFIED_NO;
+	gb_strings[i].modified = MODIFIED_NO;
 
       } else {
 
-	gb_strings[i].modified=MODIFIED_YES;
+	gb_strings[i].modified = MODIFIED_YES;
 
       }
 
-      gb_dirty=1;
+      gb_dirty = 1;
 
     }
 
@@ -650,105 +656,105 @@ add_entry(dialogMenuItem *item)
   char new_value[4096];
   char new_comment[4096];
 
-  memset(new_name,0,4096);
-  memset(new_value,0,4096);
-  memset(new_comment,0,4096);
-  sprintf(new_value,"\"\"");
+  memset(new_name, 0, 4096);
+  memset(new_value, 0, 4096);
+  memset(new_comment, 0, 4096);
+  sprintf(new_value, "\"\"");
 
 
   do {
 
-    dupe=0;
-    retcode=dialog_inputbox("Name of the new entry","",8,64,new_name);
-    if(retcode!=0) return DITEM_SUCCESS;
+    dupe = 0;
+    retcode = dialog_inputbox("Name of the new entry", "", 8, 64, new_name);
+    if(retcode != 0) return DITEM_SUCCESS;
 
     /* Check for duplicate entries */
-    for(i=0;i<gb_num_knobs;i++) {
+    for(i=0; i<gb_num_knobs; i++) {
 
-      if(!strncmp(gb_knobs[i].name,new_name,255)) {
+      if(!strncmp(gb_knobs[i].name, new_name, 255)) {
 
-	dupe=1;
+	dupe = 1;
 	break;
 
       }
 
     }
 
-    for(i=0;i<gb_num_str;i++) {
+    for(i=0; i<gb_num_str; i++) {
 
-      if(!strncmp(gb_strings[i].name,new_name,255)) {
-	dupe=1;
+      if(!strncmp(gb_strings[i].name, new_name, 255)) {
+	dupe = 1;
 	break;
 
       }
 
     }
 
-    if(dupe==1) {
+    if(dupe == 1) {
 	
       dialog_notify("Duplicated entry.");
 
     }
 
-  } while(dupe==1);
+  } while(dupe == 1);
 
 
   do {
 
-    quot=0;
-    retcode=dialog_inputbox("Value (Can be YES, NO or a string)",
-			    "",8,64,new_value);
+    quot = 0;
+    retcode = dialog_inputbox("Value (Can be YES, NO or a string)",
+			      "", 8, 64, new_value);
 
-    /* User has aborted add operation */
-    if(retcode!=0) return DITEM_SUCCESS;
+    /* User has aborted the add operation */
+    if(retcode != 0) return DITEM_SUCCESS;
 
-    if(new_value[0]!='"'||new_value[strlen(new_value)-1]!='"') {
+    if(new_value[0] != '"' || new_value[strlen(new_value)-1] != '"') {
 
       dialog_notify("Value must begin and end with '\"'.");
-      quot=1;
+      quot = 1;
 
     }
 
-  } while(quot==1);
+  } while(quot == 1);
 
-  retcode=dialog_inputbox("Optional comment (leave empty for none)",
-			  "",8,64,new_comment);
+  retcode = dialog_inputbox("Optional comment (leave empty for none)",
+			    "", 8, 64, new_comment);
 
-  /* User has aborted add operation */
-  if(retcode!=0) return DITEM_SUCCESS;
+  /* User has aborted the add operation */
+  if(retcode != 0) return DITEM_SUCCESS;
 
   /* Check if new entry is a KNOB or not */
-  if( !strncasecmp(new_value,KNOB_YES,255) || !strncasecmp(new_value,KNOB_NO,255)) {
+  if( !strncasecmp(new_value, KNOB_YES, 255) || !strncasecmp(new_value, KNOB_NO, 255)) {
 
-    strncpy(gb_knobs[gb_num_knobs].name,new_name,255);
-    if(!strncasecmp(new_value,KNOB_YES,255)) {
+    strncpy(gb_knobs[gb_num_knobs].name, new_name, 255);
+    if(!strncasecmp(new_value, KNOB_YES, 255)) {
 
-      gb_knobs[gb_num_knobs].knob_val=KNOB_IS_YES;
-      gb_knobs[gb_num_knobs].knob_orig=KNOB_IS_YES;
-      gb_knobs[gb_num_knobs].modified=MODIFIED_YES;
-      gb_knobs[gb_num_knobs].user_added=USER_ADDED_YES;
+      gb_knobs[gb_num_knobs].knob_val = KNOB_IS_YES;
+      gb_knobs[gb_num_knobs].knob_orig = KNOB_IS_YES;
+      gb_knobs[gb_num_knobs].modified = MODIFIED_YES;
+      gb_knobs[gb_num_knobs].user_added = USER_ADDED_YES;
 
-      if(strlen(new_comment)>0) {
+      if(strlen(new_comment) > 0) {
 
-	strncpy(gb_knobs[gb_num_knobs].comment,new_comment,255);
-	gb_knobs[gb_num_knobs].user_comment=1;
+	strncpy(gb_knobs[gb_num_knobs].comment, new_comment, 255);
+	gb_knobs[gb_num_knobs].user_comment = 1;
 
       }
 
-      gb_dirty=1;
+      gb_dirty = 1;
 
     } else {
 
-      gb_knobs[gb_num_knobs].knob_val=KNOB_IS_NO;
-      gb_knobs[gb_num_knobs].knob_orig=KNOB_IS_NO;
-      gb_knobs[gb_num_knobs].modified=MODIFIED_YES;
-      gb_knobs[gb_num_knobs].user_added=USER_ADDED_YES;
-      gb_dirty=1;
+      gb_knobs[gb_num_knobs].knob_val = KNOB_IS_NO;
+      gb_knobs[gb_num_knobs].knob_orig = KNOB_IS_NO;
+      gb_knobs[gb_num_knobs].modified = MODIFIED_YES;
+      gb_knobs[gb_num_knobs].user_added = USER_ADDED_YES;
+      gb_dirty = 1;
 
-      if(strlen(new_comment)>0) {
+      if(strlen(new_comment) > 0) {
 
-	strncpy(gb_knobs[gb_num_knobs].comment,new_comment,255);
-	gb_knobs[gb_num_knobs].user_comment=1;
+	strncpy(gb_knobs[gb_num_knobs].comment, new_comment, 255);
+	gb_knobs[gb_num_knobs].user_comment = 1;
 
       }
 
@@ -759,17 +765,17 @@ add_entry(dialogMenuItem *item)
     /* Is a string */
   } else {
 
-    strncpy(gb_strings[gb_num_str].name,new_name,255);
-    strncpy(gb_strings[gb_num_str].value,new_value,255);
-    strncpy(gb_strings[gb_num_str].orig,new_value,255);
-    gb_strings[gb_num_str].modified=MODIFIED_YES;
-    gb_strings[gb_num_str].user_added=USER_ADDED_YES;
-    gb_dirty=1;
+    strncpy(gb_strings[gb_num_str].name, new_name, 255);
+    strncpy(gb_strings[gb_num_str].value, new_value, 255);
+    strncpy(gb_strings[gb_num_str].orig, new_value, 255);
+    gb_strings[gb_num_str].modified = MODIFIED_YES;
+    gb_strings[gb_num_str].user_added = USER_ADDED_YES;
+    gb_dirty = 1;
 
-    if(strlen(new_comment)>0) {
+    if(strlen(new_comment) > 0) {
 
-      strncpy(gb_strings[gb_num_str].comment,new_comment,255);
-      gb_strings[gb_num_str].user_comment=1;
+      strncpy(gb_strings[gb_num_str].comment, new_comment, 255);
+      gb_strings[gb_num_str].user_comment = 1;
 
     }
 
@@ -784,7 +790,7 @@ add_entry(dialogMenuItem *item)
   free(MenuKnobs);
   free(str_it);
   free(MenuStrings);
-  create_ncurses_ui(gb_knobs,gb_num_knobs,gb_strings,gb_num_str);
+  create_ncurses_ui(gb_knobs, gb_num_knobs, gb_strings, gb_num_str);
   end_dialog();
   exit(0);
 

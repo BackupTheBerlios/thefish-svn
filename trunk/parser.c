@@ -33,13 +33,14 @@
 
 #include "parser.h"
 
+static int parseline(RC_NODE *);
 int yylex(void);
 
-int tmp_knobs,tmp_strings;
+static int tmp_knobs,tmp_strings;
 
 /* RC_NODEs that look like knobs but aren't */
 
-char *except[]={ "swapfile" , "pccard_ifconfig", "nisdomainname", 
+static char *except[]={ "swapfile" , "pccard_ifconfig", "nisdomainname", 
 		 "ip_portrange_first", "ip_portrange_last", "gif_interfaces",
 		 "defaultrouter", "ipv6_defaultrouter", "keymap", "keyrate",
 		 "keybell", "keychange", "cursor", "scrnmap", "font8x16",
@@ -52,7 +53,7 @@ char *except[]={ "swapfile" , "pccard_ifconfig", "nisdomainname",
 };
 
 
-int pending;
+static int pending;
 
 extern char *yytext;
 extern FILE*yyin;
@@ -142,7 +143,7 @@ build_list(char *filename, int len,
 
 }
 
-int 
+static int 
 parseline(RC_NODE *current)
 {
   char i;

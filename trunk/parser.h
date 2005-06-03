@@ -63,10 +63,6 @@ typedef struct rc_node {
 
 int build_list(char *,int,RC_NODE **,int *,RC_NODE **,int *);
 int merge_lists(RC_NODE **,int *,RC_NODE **,int *,RC_NODE **,int *,RC_NODE **,int *);
-#if defined(WITHOUT_PARSER_NG)
-int parseline(char *,RC_NODE *);
-#else
-int parseline(RC_NODE *);
-#endif
+
 void list_sort(RC_NODE **, int);
 
