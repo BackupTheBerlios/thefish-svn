@@ -47,7 +47,7 @@ extern char *tzname[2];
 #include "fish48.xpm"
 #include "fish64.xpm"
 
-#define UNCHANGED_ICON GTK_STOCK_REMOVE
+#define UNCHANGED_ICON ""
 #define CHANGED_ICON GTK_STOCK_SAVE
 
 enum
