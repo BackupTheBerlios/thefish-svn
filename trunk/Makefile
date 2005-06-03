@@ -47,5 +47,5 @@ clean:
 lex.yy.o:	lex.yy.c
 
 lex.yy.c:	rc_conf.l
-			lex rc_conf.l
+		lex rc_conf.l
 .endif
