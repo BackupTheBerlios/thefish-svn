@@ -42,6 +42,7 @@ public slots:
 
   void CheckSaved();
   void ShowAbout();
+  void DoSave();
 
 };
 

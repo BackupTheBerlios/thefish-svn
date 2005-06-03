@@ -1,15 +1,15 @@
 /*
   Copyright (c) 2004, Miguel Mendez. All rights reserved.
-
+	
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
-
+	
   * Redistributions of source code must retain the above copyright notice,
   this list of conditions and the following disclaimer. 
   * Redistributions in binary form must reproduce the above copyright notice,
   this list of conditions and the following disclaimer in the documentation 
   and/or other materials provided with the distribution. 
-
+	
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -20,15 +20,16 @@
   CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+	
   $Id$
-
+	
   Note: This code is quite suboptimal for two reasons: 1) I'm still learning how QT 
   works and 2) I'm not really a fan of C++. To be honest I hate C++, but QT makes it
   almost bearable.
-
+	
 */
 
+#include <qcolor.h> 
 #include <qhbox.h>
 #include <qvbox.h>
 #include <qlabel.h>
@@ -38,8 +39,8 @@
 #include <qapplication.h>
 #include <qmainwindow.h>
 #include <qpushbutton.h>
-#include <qtable.h>
 #include <qtabwidget.h>
+#include <qwidget.h>
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -51,15 +52,18 @@
 
 #include "fish64.xpm"
 
-/* Window geometry */
-/* Deprecated for file, we
- * now use human readable data
- */
-int oldsize[2];
+#define NOT_MODIFIED 0
+#define IS_MODIFIED 1
 
+int oldsize[2];
 int dirty;
 
+RC_NODE *my_rc_knobs, *my_rc_strings;
+int my_num_knobs, my_num_strings;
+
 QApplication *thefish;
+QPushButton *SaveButton;
+QMainWindow *mw;
 
 // C compat glue
 extern "C" int create_qt_ui(RC_NODE *, int, RC_NODE *, int, int, char **);
@@ -84,8 +88,15 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   QApplication *thefish = new QApplication( argc, argv);
 
-  QMainWindow *mw = new QMainWindow;
+  // It's more convenient to have these
+  // as global.
+  my_rc_knobs = rc_knobs;
+  my_rc_strings = rc_strings;
 
+  my_num_knobs = num_knobs;
+  my_num_strings = num_strings;
+
+  QMainWindow *mw = new QMainWindow;
 
   QVBox *vbox = new QVBox( mw, 0, 0);
 
@@ -93,9 +104,6 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   QListView *knobs_table = new QListView;
   QListView *strings_table = new QListView;
-
-  knobs_table->setSorting(-1);
-  strings_table->setSorting(-1);
 
   strings_table->setAllColumnsShowFocus(TRUE);
 
@@ -117,21 +125,20 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   QHBox *hbuttons = new QHBox( vbox, 0, 0);
 
-  QPushButton SaveButton("&Save", hbuttons, 0);
+  SaveButton= new QPushButton("&Save", hbuttons, 0);
   QPushButton AddButton("&Add", hbuttons, 0);
   QPushButton AboutButton("A&bout", hbuttons, 0);
   QPushButton QuitButton("&Quit",  hbuttons, 0);
 
   // No save for now...
-  SaveButton.setEnabled(FALSE);
+  SaveButton->setEnabled(FALSE);
 
   QObject::connect( &QuitButton, SIGNAL(clicked()), &my_dialogs, SLOT(CheckSaved()));
   QObject::connect( &AboutButton, SIGNAL(clicked()), &my_dialogs, SLOT(ShowAbout()));
+  QObject::connect( SaveButton, SIGNAL(clicked()), &my_dialogs, SLOT(DoSave()));
 
-  /* Set the size.
-   * We're now using human readable data, handle the migration
-   * transparently for the user.
-   */
+  // We're now using human readable data, handle the migration
+  // transparently for the user.
   homedir=getenv("HOME");
 
   if(homedir!=NULL) {
@@ -158,7 +165,7 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
       }
 
     } else  {
-      /* Set some default values */
+      // Set some default values
       oldsize[0]=400;
       oldsize[1]=480;
 
@@ -166,23 +173,28 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   }
 
-// Build the table
+  // Build the table
 
   knobs_table->setColumnWidthMode ( 1, QListView::Maximum);
   knobs_table->setRootIsDecorated( FALSE );
 
+  QColor mygray(240,240,240);
 
   for(i=num_knobs-1;i>=0;i--) {
 
-    /* No user comments yet */
+    // No user comments yet
     (rc_knobs+i)->user_comment=0;
 
     foo = new QCheckListItem( knobs_table, (rc_knobs+i)->name, QCheckListItem::CheckBox);
 
-    if( (rc_knobs+i)->knob_val==KNOB_IS_NO) {
+    //    if(i%2==0) foo->setPaletteBackgroundColor(&mygray);
+
+  
+
+  if( (rc_knobs+i)->knob_val==KNOB_IS_NO) {
 
       foo->setOn(FALSE);
-      
+
     } else {
 
       foo->setOn(TRUE);
@@ -191,10 +203,9 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   }
 
-
   for(i=num_strings-1;i>=0;i--) {
 
-    /* No user comments yet */
+    // No user comments yet
     (rc_strings+i)->user_comment=0;
 
     element = new QListViewItem( strings_table, (rc_strings+i)->name, (rc_strings+i)->value);
@@ -218,7 +229,6 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   return thefish->exec();
 
-
 }
 
 void 
@@ -235,7 +245,7 @@ MyDialogs::CheckSaved()
 				    "No", 0, 0, 1 );
 
     if(retcode == 0) {
-			
+
       save_geometry();
       thefish->exit(0);
 
@@ -270,9 +280,45 @@ void
 TableCallbacks::StringChanged(QListViewItem * item, int col, const QString & text)
 {
   QString value;
+  int i;
 
   value = item->text(0);
-  printf("Se ha cambiado %s a %s\n",value.ascii(),text.ascii());
+
+#ifdef VERBOSE_CONSOLE
+  fprintf(stderr, "You've set %s to %s\n",value.ascii(),text.ascii());
+#endif
+
+  for(i=0; i<=my_num_strings; i++) {
+
+    if(strncmp((my_rc_strings+i)->name, value.ascii(), 255)==0) {
+
+      strncpy((my_rc_strings+i)->value, text.ascii(), 255);
+
+      if(strncmp((my_rc_strings+i)->orig, text.ascii(), 255)==0) {
+
+	if(dirty>0) dirty--;
+	(my_rc_strings+i)->modified=NOT_MODIFIED;
+
+      } else {
+
+	dirty++;
+	(my_rc_strings+i)->modified=IS_MODIFIED;
+
+      }
+
+      if(dirty==0) {
+
+	SaveButton->setEnabled(FALSE);
+
+      } else {
+
+	SaveButton->setEnabled(TRUE);
+
+      }
+
+      break;
+    }
+  }
 
 }
 
@@ -281,15 +327,15 @@ TableCallbacks::KnobChanged(QListViewItem *item)
 {
   QString value;
   QCheckListItem *foo;
-
+	
   value = item->text(0);
-
+	
   foo = (QCheckListItem *) item;
-
+	
   if(foo->isOn()) {
-
-  printf("Ahora %s esta activo\n", value.ascii() );
-
+	
+    printf("Ahora %s esta activo\n", value.ascii() );
+	
   }
 }
 
@@ -301,3 +347,141 @@ save_geometry(void)
 
 }
 
+// This function saves changes to $FISH_RC or 
+// /etc/rc.conf
+void
+MyDialogs::DoSave()
+{
+
+  int i,not_committed;
+  RC_NODE *work;
+  FILE *fd;
+  char *rc_file;
+  char fish_header[255];
+  char time_buf[255];
+  char path_string[1024];
+  time_t comm_time;
+
+  not_committed=0;
+
+  if(dirty>0) {
+
+    work=my_rc_knobs;
+
+    rc_file=getenv("FISH_RC");
+
+    if(rc_file!=NULL) {
+
+      fd=fopen(rc_file, "a");
+
+    } else { 
+
+      fd=fopen(RC_FILE, "a");
+
+    }
+
+    if(fd==NULL) {
+
+      not_committed=1;			
+
+    }
+
+    if(not_committed==0) {
+
+      comm_time=time(NULL);
+      ctime_r(&comm_time,time_buf);
+      snprintf(fish_header,255,"\n# The Fish generated deltas - %s",time_buf);
+      fprintf(fd,fish_header);
+
+      // modified knobs
+      for(i=0;i<=my_num_knobs;i++) {
+
+	if(work->modified==MODIFIED_YES) {
+
+	  if(work->user_comment==0) {
+
+	    fprintf(fd,"%s=%s\n", work->name,
+		    work->knob_val == KNOB_IS_YES ? KNOB_YES : KNOB_NO);
+
+	  } else {
+
+	    fprintf(fd,"%s=%s\t# %s\n", work->name,
+		    work->knob_val == KNOB_IS_YES ? KNOB_YES : KNOB_NO,
+		    work->comment);
+
+	  }
+
+	  work->user_comment=0;
+	  work->user_added=USER_ADDED_NO;
+	  work->modified=MODIFIED_NO;
+	  work->knob_orig=work->knob_val;
+
+	}
+
+	work++;
+
+	} 
+
+      // modified strings
+      work=my_rc_strings;
+      for(i=0;i<=my_num_strings;i++) {
+
+	if(work->modified==MODIFIED_YES) {
+
+	  if(work->user_comment==0) {
+
+	    fprintf(fd,"%s=%s\n", work->name, work->value);
+	    
+	  } else {
+
+	    fprintf(fd,"%s=%s\t# %s\n", work->name, work->value,
+		    work->comment);
+
+	  }
+
+	  work->user_comment=0;
+	  work->modified=MODIFIED_NO;
+	  work->user_added=USER_ADDED_NO;
+	  strncpy(work->orig, work->value, 255);
+
+	}
+
+	work++;
+
+      }  
+
+      fclose(fd);
+
+    }
+
+      /* Pop up window */
+    if(not_committed==1) {
+
+      snprintf(path_string, 1023, "Can't open '%s' for writing. Changes not saved.",
+	       rc_file!=NULL ? rc_file : RC_FILE);
+
+      QMessageBox::critical( 0, "The Fish",
+			     path_string);
+
+    } else {
+
+      QMessageBox::information( 0, "The Fish",
+				"Changes saved.");
+    }
+    
+
+  } else {
+
+    QMessageBox::information( 0, "The Fish",
+			      "There are no unsaved changes.");
+
+  }
+
+  if(not_committed==0) {
+
+    dirty=0;
+    SaveButton->setEnabled(FALSE);
+
+  }
+
+}
