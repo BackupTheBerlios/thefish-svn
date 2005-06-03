@@ -1,30 +1,27 @@
 /*
-Copyright (c) 2002-2003, Miguel Mendez. All rights reserved.
+  Copyright (c) 2002-2004, Miguel Mendez. All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
 
- * Redistributions of source code must retain the above copyright notice,
- this list of conditions and the following disclaimer. 
- * Redistributions in binary form must reproduce the above copyright notice,
- this list of conditions and the following disclaimer in the documentation 
- and/or other materials provided with the distribution. 
- * Neither the name of Miguel Mendez nor the names of his contributors
- may be used to endorse or promote products derived from this software 
- without specific prior written permission.
+  * Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer. 
+  * Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation 
+  and/or other materials provided with the distribution. 
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-$Id$
+  $Id$
 
 */
 
@@ -91,27 +88,27 @@ main(int argc, char **argv)
 
   while((ch = getopt(argc, argv, "cvh")) != -1) {
 
-	switch(ch) {
+    switch(ch) {
 
-	case 'c':
-	  wantconsole = 1;
-	  break;
+    case 'c':
+      wantconsole = 1;
+      break;
 
-	case 'v':
-	  printf("The Fish %s\n"
-			 "Copyright (c) 2002-2003, Miguel Mendez."
-			 " All rights reserved.\n",THE_FISH_VERSION);
-	  printf("Portions Copyright (c) 1995, Jordan Hubbard.\n");
-	  exit(EXIT_SUCCESS);
+    case 'v':
+      printf("The Fish %s\n"
+	     "Copyright (c) 2002-2004, Miguel Mendez."
+	     " All rights reserved.\n",THE_FISH_VERSION);
+      printf("Portions Copyright (c) 1995, Jordan Hubbard.\n");
+      exit(EXIT_SUCCESS);
 
-	case 'h':
-	default:
-	  usage();
+    case 'h':
+    default:
+      usage();
 
-	}
+    }
 
-	argc -= optind;
-	argv += optind;
+    argc -= optind;
+    argv += optind;
 
   }
 
@@ -127,18 +124,18 @@ main(int argc, char **argv)
   /* Parse defaults file */
   if(defaults_rc_file!=NULL) {
 
-	fd=open(defaults_rc_file,O_RDONLY,0);
+    fd=open(defaults_rc_file,O_RDONLY,0);
 
   } else {
 
-	fd=open(RC_DEFAULTS_FILE,O_RDONLY,0);
+    fd=open(RC_DEFAULTS_FILE,O_RDONLY,0);
 
   }
 
   if(fd==-1) {
 
-	perror(RC_DEFAULTS_FILE);
-	exit(EXIT_FAILURE);
+    perror(RC_DEFAULTS_FILE);
+    exit(EXIT_FAILURE);
 
   }
 
@@ -148,8 +145,8 @@ main(int argc, char **argv)
 
   if(buffer==MAP_FAILED) {
 
-	perror("mmap()");
-	exit(EXIT_FAILURE);
+    perror("mmap()");
+    exit(EXIT_FAILURE);
 
   }
 
@@ -163,13 +160,13 @@ main(int argc, char **argv)
 #if defined(WITHOUT_PARSER_NG)
 
   retval=build_list(buffer,mapsize,&rc_knobs,
-					&num_knobs,&rc_strings,&num_str);
+		    &num_knobs,&rc_strings,&num_str);
 
 #else
 
   retval=build_list(defaults_rc_file!=NULL ? \
-					defaults_rc_file : RC_DEFAULTS_FILE,
-					0,&rc_knobs,&num_knobs,&rc_strings,&num_str);
+		    defaults_rc_file : RC_DEFAULTS_FILE,
+		    0,&rc_knobs,&num_knobs,&rc_strings,&num_str);
 #endif
 
 #if defined(WITHOUT_PARSER_NG)
@@ -178,8 +175,8 @@ main(int argc, char **argv)
 
   if(retval==-1) {
 
-	perror("munmap()");
-	exit(EXIT_FAILURE);
+    perror("munmap()");
+    exit(EXIT_FAILURE);
 
   }
 
@@ -193,18 +190,18 @@ main(int argc, char **argv)
 
   if(rc_file!=NULL) {
 
-	fd=open(rc_file,O_RDONLY,0);
+    fd=open(rc_file,O_RDONLY,0);
 
   } else { 
 
-	fd=open(RC_FILE,O_RDONLY,0);
+    fd=open(RC_FILE,O_RDONLY,0);
 
   }
 
   if(fd==-1) {
 
-	perror(RC_FILE);
-	exit(EXIT_FAILURE);
+    perror(RC_FILE);
+    exit(EXIT_FAILURE);
 
   }
 
@@ -214,8 +211,8 @@ main(int argc, char **argv)
 
   if(buffer==MAP_FAILED) {
 
-	perror("mmap()");
-	exit(EXIT_FAILURE);
+    perror("mmap()");
+    exit(EXIT_FAILURE);
 
   }
 #endif
@@ -228,13 +225,13 @@ main(int argc, char **argv)
 #if defined(WITHOUT_PARSER_NG)
 
   retval=build_list(buffer,mapsize,&rc_knobs2,
-					&num_knobs2,&rc_strings2,&num_str2);
+		    &num_knobs2,&rc_strings2,&num_str2);
 
 #else
 
   retval=build_list(rc_file!=NULL ? \
-					rc_file : RC_FILE,
-					0,&rc_knobs2,&num_knobs2,&rc_strings2,&num_str2);
+		    rc_file : RC_FILE,
+		    0,&rc_knobs2,&num_knobs2,&rc_strings2,&num_str2);
 
 
 #endif
@@ -245,8 +242,8 @@ main(int argc, char **argv)
 
   if(retval==-1) {
 
-	perror("munmap()");
-	exit(EXIT_FAILURE);
+    perror("munmap()");
+    exit(EXIT_FAILURE);
 
   }
 
@@ -257,12 +254,12 @@ main(int argc, char **argv)
 
   /* merge data */
   retval=merge_lists(&rc_knobs,&num_knobs,&rc_strings,&num_str,&rc_knobs2,
-					 &num_knobs2,&rc_strings2,&num_str2);
+		     &num_knobs2,&rc_strings2,&num_str2);
 
   if(retval==-1) {
 
-	perror("merge_lists()");
-	exit(EXIT_FAILURE);
+    perror("merge_lists()");
+    exit(EXIT_FAILURE);
 
   }
 
@@ -277,16 +274,16 @@ main(int argc, char **argv)
   current=rc_knobs;
   for(counter=0;counter<num_knobs;counter++) {
 
-	current->user_comment=0;
-	current++;
+    current->user_comment=0;
+    current++;
 
   }
 
   current=rc_strings;
   for(counter=0;counter<num_str;counter++) {
 
-	current->user_comment=0;
-	current++;
+    current->user_comment=0;
+    current++;
 
   }
 
@@ -294,12 +291,12 @@ main(int argc, char **argv)
   if(wantconsole==0) {
 
 #if !defined(NO_GUI)	
-	create_gtk_ui(rc_knobs, num_knobs, rc_strings, num_str);
+    create_gtk_ui(rc_knobs, num_knobs, rc_strings, num_str);
 #endif
 
   } else {
 	
-	create_ncurses_ui(rc_knobs, num_knobs, rc_strings, num_str);
+    create_ncurses_ui(rc_knobs, num_knobs, rc_strings, num_str);
 
   }
 
