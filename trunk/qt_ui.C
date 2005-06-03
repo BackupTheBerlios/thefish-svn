@@ -30,15 +30,18 @@
 */
 
 #include <qcolor.h> 
+#include <qgroupbox.h>
 #include <qhbox.h>
 #include <qvbox.h>
 #include <qlabel.h>
+#include <qlineedit.h> 
 #include <qlistview.h>
 #include <qobject.h>
 #include <qmessagebox.h>
 #include <qapplication.h>
 #include <qmainwindow.h>
 #include <qpushbutton.h>
+#include <qstatusbar.h>
 #include <qtabwidget.h>
 #include <qwidget.h>
 
@@ -55,15 +58,17 @@
 #define NOT_MODIFIED 0
 #define IS_MODIFIED 1
 
+QApplication *thefish;
+QPushButton *SaveButton;
+QMainWindow *mw;
+QStatusBar *my_status_bar;
+
 int oldsize[2];
 int dirty;
 
 RC_NODE *my_rc_knobs, *my_rc_strings;
 int my_num_knobs, my_num_strings;
 
-QApplication *thefish;
-QPushButton *SaveButton;
-QMainWindow *mw;
 
 // C compat glue
 extern "C" int create_qt_ui(RC_NODE *, int, RC_NODE *, int, int, char **);
@@ -86,7 +91,7 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
   MyDialogs my_dialogs;
   TableCallbacks my_tablecallbacks;
 
-  QApplication *thefish = new QApplication( argc, argv);
+  thefish = new QApplication( argc, argv);
 
   // It's more convenient to have these
   // as global.
@@ -96,7 +101,7 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
   my_num_knobs = num_knobs;
   my_num_strings = num_strings;
 
-  QMainWindow *mw = new QMainWindow;
+  mw = new QMainWindow;
 
   QVBox *vbox = new QVBox( mw, 0, 0);
 
@@ -131,13 +136,12 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
   QPushButton QuitButton("&Quit",  hbuttons, 0);
 
   // No save for now...
-  SaveButton->setEnabled(FALSE);
+  SaveButton->setEnabled(false);
 
   QObject::connect( &QuitButton, SIGNAL(clicked()), &my_dialogs, SLOT(CheckSaved()));
   QObject::connect( &AboutButton, SIGNAL(clicked()), &my_dialogs, SLOT(ShowAbout()));
+  QObject::connect( &AddButton, SIGNAL(clicked()), &my_dialogs, SLOT(DoAdd()));
   QObject::connect( SaveButton, SIGNAL(clicked()), &my_dialogs, SLOT(DoSave()));
-
-  //  QObject::connect( thefish, SIGNAL(lastWindowClosed()), &my_dialogs, SLOT(CheckSaved()));
 
   // We're now using human readable data, handle the migration
   // transparently for the user.
@@ -178,7 +182,7 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
   // Build the table
 
   knobs_table->setColumnWidthMode ( 1, QListView::Maximum);
-  knobs_table->setRootIsDecorated( FALSE );
+  knobs_table->setRootIsDecorated(false);
 
   QColor mygray(240,240,240);
 
@@ -228,6 +232,9 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
   mw->resize(oldsize[0], oldsize[1]);
 
   dirty=0;
+
+  my_status_bar = mw->statusBar(); 
+  my_status_bar->message("Ready");
 
   return thefish->exec();
 
@@ -389,6 +396,7 @@ TableCallbacks::KnobChanged(QListViewItem *item)
 
   }
 
+  my_status_bar->message((my_rc_knobs+i)->comment);
 
   if(dirty==0) {
 
@@ -402,11 +410,33 @@ TableCallbacks::KnobChanged(QListViewItem *item)
 
 }
 
+// Save window geometry prefs
+// We use the same format for
+// the GTK+ and the Qt interfaces
 void 
 save_geometry(void)
 {
+  int newsize[2];
+  char *homedir;
+  char temp[FILENAME_MAX];
+  int fd;
+  FILE *fp;
 
-  printf("Salvando el geometra\n");
+  newsize[0] = mw->width();
+  newsize[1] = mw->height();
+
+  if(oldsize[0]!=newsize[0] || oldsize[1]!=newsize[1]) {
+
+    homedir=getenv("HOME");
+    if(homedir==NULL) return;
+    snprintf(temp, FILENAME_MAX, "%s/%s", homedir, ".thefishrc");
+    fd=open(temp, O_WRONLY|O_CREAT|O_TRUNC, 0666);
+    if(fd==-1) return;
+    fp=fdopen(fd, "a");
+    fprintf(fp, "geometry=%i,%i\n", newsize[0], newsize[1]);
+    fclose(fp);
+
+  }
 
 }
 
@@ -545,5 +575,64 @@ MyDialogs::DoSave()
     SaveButton->setEnabled(FALSE);
 
   }
+
+}
+
+void
+MyDialogs::DoAdd()
+{
+
+  QDialog *my_add_dialog = new QDialog( mw, "my_add_dialog", 0);
+  QVBox *add_vbox = new QVBox( my_add_dialog, 0, 0);
+
+  QGroupBox *name_label = new QGroupBox("Name", add_vbox, 0);
+  //  name_label->layout()->setSpacing(6);
+  //  name_label->layout()->setMargin(11);
+  QLineEdit *name_edit = new QLineEdit( name_label, 0);
+
+  QGroupBox *value_label = new QGroupBox("Value", add_vbox, 0);
+  QLineEdit *value_edit = new QLineEdit( "\"\"", value_label, 0);
+
+  QGroupBox *comment_label = new QGroupBox("Optional comment", add_vbox, 0);
+  QLineEdit *comment_edit = new QLineEdit( comment_label, 0);
+
+  QHBox *add_hbuttons = new QHBox( add_vbox, 0, 0);
+
+  QPushButton *AddYesButton = new QPushButton("&OK", add_hbuttons, 0);
+  QPushButton *AddNoButton = new QPushButton("&Cancel", add_hbuttons, 0);
+
+  QObject::connect( AddYesButton, SIGNAL(clicked()), my_add_dialog, SLOT(accept()));
+  QObject::connect( AddNoButton, SIGNAL(clicked()), my_add_dialog, SLOT(reject()));
+
+  //  add_vbox->setSizePolicy (QSizePolicy )
+  add_vbox->adjustSize();
+
+  my_add_dialog->setCaption("Add a new entry");
+  my_add_dialog->adjustSize();
+
+  if(my_add_dialog->exec() == QDialog::Accepted) {
+
+    printf("User wants to add a new entry\n");
+
+  }
+
+  printf("Hola!\n");
+  delete(my_add_dialog);
+
+}
+
+void 
+AddDialogFuncs::AddYesClicked()
+{
+
+  printf("Add yes...\n");
+
+}
+
+void 
+AddDialogFuncs::AddNoClicked()
+{
+  printf("Add no\n");
+
 
 }

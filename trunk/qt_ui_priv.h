@@ -43,6 +43,7 @@ public slots:
   void CheckSaved();
   void ShowAbout();
   void DoSave();
+  void DoAdd();
 
 };
 
@@ -55,6 +56,19 @@ public slots:
 
   void StringChanged(QListViewItem *, int, const QString &);
   void KnobChanged(QListViewItem*);
+
+};
+
+class AddDialogFuncs : public QObject {
+  Q_OBJECT
+
+public:
+
+public slots:
+
+  void AddYesClicked();
+  void AddNoClicked();
+
 
 };
 
