@@ -49,6 +49,7 @@ extern char *tzname[2];
 
 #define RC_DEFAULTS_FILE "/etc/defaults/rc.conf"
 #define RC_FILE "/etc/rc.conf"
+#define UNCHANGED_ICON GTK_STOCK_REMOVE
 
 /* Function prototypes */
 gint delete_event( GtkWidget *, GdkEvent *, gpointer);
@@ -152,6 +153,10 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   GtkWidget *quit_button;
   GtkWidget *about_button;
+  GtkWidget *about_icon;
+  GtkWidget *about_label;
+  GtkWidget *about_hbox;
+  GtkWidget *about_align;
   GtkWidget *add_button;
   GtkWidget *h_buttons;
 
@@ -261,7 +266,17 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   /* Basic buttons */
   commit_button = gtk_button_new_from_stock(GTK_STOCK_SAVE);
   quit_button = gtk_button_new_from_stock(GTK_STOCK_QUIT);
-  about_button = gtk_button_new_with_label("About");
+
+  about_button = gtk_button_new();
+  about_icon = gtk_image_new_from_stock(GTK_STOCK_PROPERTIES, GTK_ICON_SIZE_MENU);
+  about_label = gtk_label_new("About");
+  about_hbox = gtk_hbox_new(FALSE, 2);
+  about_align = gtk_alignment_new(0.5, 0.5, 0.0, 0.0);
+  gtk_box_pack_start(GTK_BOX(about_hbox), about_icon, FALSE, FALSE, 0);
+  gtk_box_pack_end(GTK_BOX(about_hbox), about_label, FALSE, FALSE, 0);
+  gtk_container_add(GTK_CONTAINER(about_button), about_align);
+  gtk_container_add(GTK_CONTAINER(about_align), about_hbox);
+
   add_button = gtk_button_new_from_stock(GTK_STOCK_ADD);
 
   /* Button tooltips */
@@ -353,7 +368,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 		     GTK_SIGNAL_FUNC(radio_no_pressed), NULL);
 
 
-    knob_status[i]=gtk_image_new_from_stock(GTK_STOCK_REMOVE,GTK_ICON_SIZE_MENU);
+    knob_status[i]=gtk_image_new_from_stock(UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
 
     knob_label[i]=gtk_button_new_with_label(work->name);
     gtk_button_set_relief(GTK_BUTTON(knob_label[i]),(GtkReliefStyle) GTK_RELIEF_NONE);
@@ -438,7 +453,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
     str_label[i]=gtk_button_new_with_label(work->name);
     gtk_button_set_relief(GTK_BUTTON(str_label[i]),(GtkReliefStyle) GTK_RELIEF_NONE);
 
-    str_status[i]=gtk_image_new_from_stock(GTK_STOCK_REMOVE,GTK_ICON_SIZE_MENU);
+    str_status[i]=gtk_image_new_from_stock(UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
     str_tips[i]=gtk_tooltips_new();
     gtk_tooltips_set_tip(str_tips[i],str_label[i],(rc_strings+i)->comment,"");
     gtk_tooltips_enable(str_tips[i]);
@@ -487,6 +502,10 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   gtk_widget_show(commit_button);
   gtk_widget_show(quit_button);
   gtk_widget_show(about_button);
+  gtk_widget_show(about_label);
+  gtk_widget_show(about_hbox);
+  gtk_widget_show(about_icon);
+  gtk_widget_show(about_align);
   gtk_widget_show(add_button);
   gtk_widget_show (scrolled_window2);
   gtk_widget_show (mytable2);
@@ -650,7 +669,7 @@ commit_pressed( GtkWidget *widget, gpointer data)
 	    work->modified=MODIFIED_NO;
 	    work->knob_orig=work->knob_val;
 	    gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]),
-				     GTK_STOCK_REMOVE,GTK_ICON_SIZE_MENU);
+				     UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
 	  }
 
 	  work++;
@@ -679,7 +698,7 @@ commit_pressed( GtkWidget *widget, gpointer data)
 	    work->user_added=USER_ADDED_NO;
 	    strncpy(work->orig,work->value,255);
 	    gtk_image_set_from_stock(GTK_IMAGE(str_status[i]),
-				     GTK_STOCK_REMOVE,GTK_ICON_SIZE_MENU);
+				     UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
 	  }
 
 	  work++;
@@ -723,10 +742,13 @@ commit_pressed( GtkWidget *widget, gpointer data)
       gtk_widget_destroy (dialog);
 
     }
-	
-    dirty=NOT_DIRTY;
-    gtk_widget_set_sensitive(commit_button,FALSE);
 
+    if(not_committed==0) {
+
+      dirty=NOT_DIRTY;
+      gtk_widget_set_sensitive(commit_button,FALSE);
+
+    }
   }
 
 }
@@ -777,7 +799,7 @@ radio_yes_pressed( GtkWidget *widget, gpointer data)
 
     work->modified=MODIFIED_NO;
     gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]),
-			     GTK_STOCK_REMOVE,GTK_ICON_SIZE_MENU);
+			     UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
     if(dirty>0) dirty--;
     if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button,FALSE);
 	
@@ -829,7 +851,7 @@ radio_no_pressed( GtkWidget *widget, gpointer data)
     if(dirty>0) dirty--;
     if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button,FALSE);
     gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]),
-			     GTK_STOCK_REMOVE,GTK_ICON_SIZE_MENU);
+			     UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
   }
 
 }
@@ -876,7 +898,7 @@ entry_modified(GtkWidget *widget, gpointer data)
     if(dirty>0) dirty--;
     if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button,FALSE);
     gtk_image_set_from_stock(GTK_IMAGE(str_status[i]),
-			     GTK_STOCK_REMOVE,GTK_ICON_SIZE_MENU);
+			     UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
   } else {
 
     work->modified=MODIFIED_YES;

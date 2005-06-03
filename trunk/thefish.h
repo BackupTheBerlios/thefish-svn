@@ -25,6 +25,6 @@
 
 */
 
-#define THE_FISH_VERSION "0.4.3 \"Hang On\"."
+#define THE_FISH_VERSION "0.4.3 \"Stone Cold Crazy\"."
 #define RC_DEFAULTS_FILE "/etc/defaults/rc.conf"
 #define RC_FILE "/etc/rc.conf"
