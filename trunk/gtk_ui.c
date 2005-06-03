@@ -79,8 +79,8 @@ void knob_toggled_callback(GtkCellRendererToggle *, gchar *, gpointer);
 void add_yes_pressed(GtkWidget *, gpointer);
 void add_no_pressed(GtkWidget *, gpointer);
 void save_geometry(void);
-void knob_tree_on_row(GtkTreeView *, GtkTreePath *, GtkTreeViewColumn *, gpointer);
-void str_tree_on_row(GtkTreeView *, GtkTreePath *, GtkTreeViewColumn *, gpointer);
+void knob_tree_on_row(GtkTreeSelection *, gpointer);
+void str_tree_on_row(GtkTreeSelection *, gpointer);
 
 /* Some defines here */
 #define IS_DIRTY 1
@@ -205,6 +205,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   GtkTreeViewColumn *knob_name_column;
   GtkCellRenderer *knob_value_renderer;
   GtkTreeViewColumn *knob_value_column;
+  GtkTreeSelection *knob_selection;
 
   GtkTreeIter   str_iter;
   GtkWidget *str_tree;
@@ -214,6 +215,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   GtkTreeViewColumn *str_name_column;
   GtkCellRenderer *str_value_renderer;
   GtkTreeViewColumn *str_value_column;
+  GtkTreeSelection *str_selection;
 
   int i;
   char *homedir;
@@ -338,22 +340,22 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   gtk_box_pack_start(GTK_BOX(h_buttons), quit_button, FALSE, FALSE, 0);
 
   /* Callback handlers */
-  g_signal_connect(GTK_OBJECT(window), "delete_event",\
+  g_signal_connect(GTK_OBJECT(window), "delete_event",
 		   GTK_SIGNAL_FUNC(delete_event), NULL);
 
-  g_signal_connect(GTK_OBJECT(window), "destroy",\
+  g_signal_connect(GTK_OBJECT(window), "destroy",
 		   GTK_SIGNAL_FUNC(destroy), NULL);
 
-  g_signal_connect(GTK_OBJECT(commit_button), "clicked",\
+  g_signal_connect(GTK_OBJECT(commit_button), "clicked",
 		   GTK_SIGNAL_FUNC(commit_pressed), NULL);
 
-  g_signal_connect(GTK_OBJECT(quit_button), "clicked",\
+  g_signal_connect(GTK_OBJECT(quit_button), "clicked",
 		   GTK_SIGNAL_FUNC(quit_pressed), NULL);
 
-  g_signal_connect(GTK_OBJECT(about_button), "clicked",\
+  g_signal_connect(GTK_OBJECT(about_button), "clicked",
 		   GTK_SIGNAL_FUNC(about_pressed), NULL);
 
-  g_signal_connect(GTK_OBJECT(add_button), "clicked",\
+  g_signal_connect(GTK_OBJECT(add_button), "clicked",
 		   GTK_SIGNAL_FUNC(add_pressed), NULL);
 
 
@@ -383,11 +385,8 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   }
 
   knob_tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL(knob_store));
-
-  g_signal_connect(knob_tree, "row-activated", (GCallback) knob_tree_on_row, NULL);
   
   knob_status_renderer = gtk_cell_renderer_pixbuf_new();
- 
   knob_status_column = gtk_tree_view_column_new_with_attributes("S",
 								knob_status_renderer,
 								"stock-id", KNOB_STATUS,
@@ -421,6 +420,12 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   gtk_tree_view_set_rules_hint(GTK_TREE_VIEW(knob_tree), TRUE);
   gtk_tree_view_columns_autosize(GTK_TREE_VIEW(knob_tree));
 
+  knob_selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(knob_tree));
+  gtk_tree_selection_set_mode(knob_selection, GTK_SELECTION_SINGLE);
+  g_signal_connect(G_OBJECT(knob_selection), "changed",
+		    G_CALLBACK(knob_tree_on_row),
+		    NULL);
+
   hseparator1 = gtk_hseparator_new();
 
   /* New code added on Jan 25 2003
@@ -429,10 +434,9 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
    */
   scrolled_window1=gtk_scrolled_window_new(NULL, NULL);
   gtk_container_set_border_width(GTK_CONTAINER(scrolled_window1), 10);
-  gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW(scrolled_window1),
-				  GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
-  gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window1)
-					, knob_tree);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window1),
+				 GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+  gtk_container_add(GTK_CONTAINER(scrolled_window1), knob_tree);
   gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 
   tab_bools=gtk_label_new("Knobs");
@@ -476,10 +480,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   str_tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL(str_store));
 
-  g_signal_connect(str_tree, "row-activated", (GCallback) str_tree_on_row, NULL);
-
   str_status_renderer = gtk_cell_renderer_pixbuf_new();
-
   str_status_column = gtk_tree_view_column_new_with_attributes("S",
 							       str_status_renderer,
 							       "stock-id", STR_STATUS,
@@ -516,6 +517,12 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   gtk_tree_view_columns_autosize(GTK_TREE_VIEW(str_tree));
 
 
+  str_selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(str_tree));
+  gtk_tree_selection_set_mode(str_selection, GTK_SELECTION_SINGLE);
+  g_signal_connect(G_OBJECT(str_selection), "changed",
+		   G_CALLBACK(str_tree_on_row),
+		   NULL);
+
   hseparator2 = gtk_hseparator_new();
 
   scrolled_window2=gtk_scrolled_window_new(NULL, NULL);
@@ -523,8 +530,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW(scrolled_window2),
 				  GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 
-  gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window2)
-					, str_tree);
+  gtk_container_add(GTK_CONTAINER(scrolled_window2), str_tree);
 
   gtk_notebook_append_page(GTK_NOTEBOOK(mynotebook), scrolled_window2, tab_str);
 
@@ -792,14 +798,15 @@ commit_pressed( GtkWidget *widget, gpointer data)
 
 /* Show brief description on what a clicked variable does. */
 void
-knob_tree_on_row(GtkTreeView        *treeview,
-		 GtkTreePath        *path,
-		 GtkTreeViewColumn  *col,
-		 gpointer            userdata)
+knob_tree_on_row(GtkTreeSelection *treeselection,
+		  gpointer user_data)
 {
+
   guint cont_id;
   int i;
   char *path_string;
+  GtkTreeModel *model;
+  GtkTreeIter iter;
 
   if(old_context_id!=0) {
     gtk_statusbar_pop(GTK_STATUSBAR(my_status), old_context_id);
@@ -808,8 +815,9 @@ knob_tree_on_row(GtkTreeView        *treeview,
   cont_id=gtk_statusbar_get_context_id(GTK_STATUSBAR(my_status),
 				       "Info");
 
-  path_string=gtk_tree_path_to_string(path);
-  i=atoi(path_string);
+  gtk_tree_selection_get_selected(treeselection, &model, &iter);
+  path_string = gtk_tree_model_get_string_from_iter(model, &iter);
+  i = atoi(path_string);
   g_free(path_string);
 
   gtk_statusbar_push(GTK_STATUSBAR(my_status),
@@ -822,14 +830,15 @@ knob_tree_on_row(GtkTreeView        *treeview,
 
 /* Show brief description on what a clicked variable does. */
 void
-str_tree_on_row(GtkTreeView        *treeview,
-		 GtkTreePath        *path,
-		 GtkTreeViewColumn  *col,
-		 gpointer            userdata)
+str_tree_on_row(GtkTreeSelection *treeselection,
+		gpointer user_data)
+
 {
   guint cont_id;
   int i;
   char *path_string;
+  GtkTreeModel *model;
+  GtkTreeIter iter;
 
   if(old_context_id!=0) {
     gtk_statusbar_pop(GTK_STATUSBAR(my_status), old_context_id);
@@ -838,8 +847,9 @@ str_tree_on_row(GtkTreeView        *treeview,
   cont_id=gtk_statusbar_get_context_id(GTK_STATUSBAR(my_status),
 				       "Info");
 
-  path_string=gtk_tree_path_to_string(path);
-  i=atoi(path_string);
+  gtk_tree_selection_get_selected(treeselection, &model, &iter);
+  path_string = gtk_tree_model_get_string_from_iter(model, &iter);
+  i = atoi(path_string);
   g_free(path_string);
 
   gtk_statusbar_push(GTK_STATUSBAR(my_status),
@@ -1005,7 +1015,9 @@ about_pressed(GtkWidget *widget, gpointer data)
 				  "The Fish "
 				  THE_FISH_VERSION
 				  "\nCopyright (c) 2002-2004, "
-				  "Miguel Mendez\nE-Mail: <flynn@energyhq.es.eu.org>\n"
+				  "Miguel Mendez\n"
+				  "Shark icon (c) 2001-2003, Alan Smith\n"
+				  "E-Mail: <flynn@energyhq.es.eu.org>\n"
 				  "http://www.energyhq.es.eu.org/thefish.html\n");
 
   gtk_dialog_run(GTK_DIALOG(dialog));
@@ -1138,11 +1150,11 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
   } else if(new_value[0]!='"'||new_value[strlen(new_value)-1]!='"') {
 
     /* Show warning dialog */
-    dialog = gtk_message_dialog_new (GTK_WINDOW(window),
-				     GTK_DIALOG_DESTROY_WITH_PARENT,
-				     GTK_MESSAGE_ERROR,
-				     GTK_BUTTONS_CLOSE,
-				     "value must begin and end with \".");
+    dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				    GTK_DIALOG_DESTROY_WITH_PARENT,
+				    GTK_MESSAGE_ERROR,
+				    GTK_BUTTONS_CLOSE,
+				    "value must begin and end with \".");
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
 
@@ -1153,11 +1165,11 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
 #endif		
 
     /* Show warning window */
-    dialog = gtk_message_dialog_new (GTK_WINDOW(window),
-				     GTK_DIALOG_DESTROY_WITH_PARENT,
-				     GTK_MESSAGE_WARNING,
-				     GTK_BUTTONS_CLOSE,
-				     "Duplicated entry");
+    dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				    GTK_DIALOG_DESTROY_WITH_PARENT,
+				    GTK_MESSAGE_WARNING,
+				    GTK_BUTTONS_CLOSE,
+				    "Duplicated entry");
 
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);

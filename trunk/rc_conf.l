@@ -38,6 +38,7 @@
 ^([a-zA-Z0-9_]+=) return *yytext;
 \".*\" return *yytext;
 #.*\n return *yytext;
+\n
 .
 %%
 
