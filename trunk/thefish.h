@@ -25,6 +25,6 @@
 
 */
 
-#define THE_FISH_VERSION "0.4.4 \"Nightfall in Middle Earth\"."
+#define THE_FISH_VERSION "0.5 \"Mirror Mirror\"."
 #define RC_DEFAULTS_FILE "/etc/defaults/rc.conf"
 #define RC_FILE "/etc/rc.conf"

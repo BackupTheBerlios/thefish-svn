@@ -43,13 +43,10 @@
 #include "gtk_ui.h"
 #endif
 
-#if !defined(WITHOUT_PARSER_NG)
-void purge(void);
-#endif
-
 #include "ncurses_ui.h"
 
 void usage(void);
+void purge(void);
 
 char *defaults_rc_file,*rc_file;
 
@@ -57,10 +54,6 @@ int
 main(int argc, char **argv)
 {
   int counter,retval;
-#if defined(WITHOUT_PARSER_NG)
-  int mapsize,fd;
-  char *buffer;
-#endif
   int num_knobs, num_str;
   RC_NODE *rc_knobs;
   RC_NODE *rc_strings;
@@ -118,137 +111,26 @@ main(int argc, char **argv)
 
   defaults_rc_file=getenv("FISH_RC_DEFAULTS");
   rc_file=getenv("FISH_RC");
-
-#if defined(WITHOUT_PARSER_NG)
-
-  /* Parse defaults file */
-  if(defaults_rc_file!=NULL) {
-
-    fd=open(defaults_rc_file,O_RDONLY,0);
-
-  } else {
-
-    fd=open(RC_DEFAULTS_FILE,O_RDONLY,0);
-
-  }
-
-  if(fd==-1) {
-
-    perror(RC_DEFAULTS_FILE);
-    exit(EXIT_FAILURE);
-
-  }
-
-  mapsize=lseek(fd,0,SEEK_END);
-
-  buffer=mmap(0, mapsize, PROT_READ, 0, fd, 0);
-
-  if(buffer==MAP_FAILED) {
-
-    perror("mmap()");
-    exit(EXIT_FAILURE);
-
-  }
-
-#endif
-
   rc_knobs=NULL;
   rc_strings=NULL;
   num_knobs=0;
   num_str=0;
 
-#if defined(WITHOUT_PARSER_NG)
-
-  retval=build_list(buffer,mapsize,&rc_knobs,
-		    &num_knobs,&rc_strings,&num_str);
-
-#else
-
   retval=build_list(defaults_rc_file!=NULL ? \
 		    defaults_rc_file : RC_DEFAULTS_FILE,
 		    0,&rc_knobs,&num_knobs,&rc_strings,&num_str);
-#endif
 
-#if defined(WITHOUT_PARSER_NG)
-
-  retval=munmap(buffer,mapsize);
-
-  if(retval==-1) {
-
-    perror("munmap()");
-    exit(EXIT_FAILURE);
-
-  }
-
-  close(fd);
-
-#endif
-
-#if defined(WITHOUT_PARSER_NG)
-
-  /* Parse rc.conf file */
-
-  if(rc_file!=NULL) {
-
-    fd=open(rc_file,O_RDONLY,0);
-
-  } else { 
-
-    fd=open(RC_FILE,O_RDONLY,0);
-
-  }
-
-  if(fd==-1) {
-
-    perror(RC_FILE);
-    exit(EXIT_FAILURE);
-
-  }
-
-  mapsize=lseek(fd,0,SEEK_END);
-
-  buffer=mmap(0, mapsize, PROT_READ, 0, fd, 0);
-
-  if(buffer==MAP_FAILED) {
-
-    perror("mmap()");
-    exit(EXIT_FAILURE);
-
-  }
-#endif
 
   rc_knobs2=NULL;
   rc_strings2=NULL;
   num_knobs2=0;
   num_str2=0;
 
-#if defined(WITHOUT_PARSER_NG)
-
-  retval=build_list(buffer,mapsize,&rc_knobs2,
-		    &num_knobs2,&rc_strings2,&num_str2);
-
-#else
 
   retval=build_list(rc_file!=NULL ? \
 		    rc_file : RC_FILE,
 		    0,&rc_knobs2,&num_knobs2,&rc_strings2,&num_str2);
 
-
-#endif
-
-#if defined(WITHOUT_PARSER_NG)
-
-  retval=munmap(buffer,mapsize);
-
-  if(retval==-1) {
-
-    perror("munmap()");
-    exit(EXIT_FAILURE);
-
-  }
-
-  close(fd);
-#endif
 
   purge();
 
