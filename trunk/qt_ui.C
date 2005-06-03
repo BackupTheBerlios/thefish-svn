@@ -137,6 +137,8 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
   QObject::connect( &AboutButton, SIGNAL(clicked()), &my_dialogs, SLOT(ShowAbout()));
   QObject::connect( SaveButton, SIGNAL(clicked()), &my_dialogs, SLOT(DoSave()));
 
+  //  QObject::connect( thefish, SIGNAL(lastWindowClosed()), &my_dialogs, SLOT(CheckSaved()));
+
   // We're now using human readable data, handle the migration
   // transparently for the user.
   homedir=getenv("HOME");
@@ -189,7 +191,7 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
     //    if(i%2==0) foo->setPaletteBackgroundColor(&mygray);
 
-  
+
 
   if( (rc_knobs+i)->knob_val==KNOB_IS_NO) {
 
@@ -327,16 +329,77 @@ TableCallbacks::KnobChanged(QListViewItem *item)
 {
   QString value;
   QCheckListItem *foo;
-	
+  int i;
+
   value = item->text(0);
-	
+
   foo = (QCheckListItem *) item;
-	
-  if(foo->isOn()) {
-	
-    printf("Ahora %s esta activo\n", value.ascii() );
-	
+
+  for(i=0; i<my_num_knobs; i++) {
+
+    if(strncmp(value.ascii(), (my_rc_knobs+i)->name, 255)==0) {
+
+      break;
+
+    }
+
   }
+
+  if(foo->isOn()) {
+
+#ifdef VERBOSE_CONSOLE
+    printf("Now %s is activated\n", value.ascii());
+#endif
+
+    (my_rc_knobs+i)->knob_val=KNOB_IS_YES;
+
+    if((my_rc_knobs+i)->knob_orig==KNOB_IS_YES) {
+
+      (my_rc_knobs+i)->modified=MODIFIED_NO;
+
+      if(dirty>0) dirty--;
+
+    } else {
+
+      (my_rc_knobs+i)->modified=MODIFIED_YES;
+      dirty++;
+
+    }
+
+  } else {
+
+#ifdef VERBOSE_CONSOLE
+    printf("Now %s is deactivated\n", value.ascii());
+#endif
+
+    (my_rc_knobs+i)->knob_val=KNOB_IS_NO;
+
+    if((my_rc_knobs+i)->knob_orig==KNOB_IS_NO) {
+
+      (my_rc_knobs+i)->modified=MODIFIED_NO;
+
+      if(dirty>0) dirty--;
+
+    } else {
+
+      (my_rc_knobs+i)->modified=MODIFIED_YES;
+      dirty++;
+
+    }
+
+  }
+
+
+  if(dirty==0) {
+
+    SaveButton->setEnabled(FALSE);
+
+  } else {
+
+    SaveButton->setEnabled(TRUE);
+
+  }
+
 }
 
 void 
@@ -352,7 +415,6 @@ save_geometry(void)
 void
 MyDialogs::DoSave()
 {
-
   int i,not_committed;
   RC_NODE *work;
   FILE *fd;
@@ -431,7 +493,7 @@ MyDialogs::DoSave()
 	  if(work->user_comment==0) {
 
 	    fprintf(fd,"%s=%s\n", work->name, work->value);
-	    
+
 	  } else {
 
 	    fprintf(fd,"%s=%s\t# %s\n", work->name, work->value,
@@ -468,7 +530,7 @@ MyDialogs::DoSave()
       QMessageBox::information( 0, "The Fish",
 				"Changes saved.");
     }
-    
+
 
   } else {
 
