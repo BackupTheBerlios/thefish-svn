@@ -180,7 +180,6 @@ main(int argc, char **argv)
 #if !defined(WITH_QT)
     create_gtk_ui(rc_knobs, num_knobs, rc_strings, num_str);
 #else
-    printf("QT path comes here...\n");
     create_qt_ui(rc_knobs, num_knobs, rc_strings, num_str, argc, argv);
 #endif
 #endif

@@ -55,21 +55,10 @@ public:
 public slots:
 
   void StringChanged(QListViewItem *, int, const QString &);
+  void StringClicked(QListViewItem*);
   void KnobChanged(QListViewItem*);
 
 };
 
-class AddDialogFuncs : public QObject {
-  Q_OBJECT
-
-public:
-
-public slots:
-
-  void AddYesClicked();
-  void AddNoClicked();
-
-
-};
 
 #endif
