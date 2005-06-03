@@ -48,6 +48,7 @@ extern char *tzname[2];
 #include "fish64.xpm"
 
 #define UNCHANGED_ICON GTK_STOCK_REMOVE
+#define CHANGED_ICON GTK_STOCK_SAVE
 
 enum
   {
@@ -73,9 +74,8 @@ void commit_pressed(GtkWidget *, gpointer);
 void quit_pressed(GtkWidget *, gpointer);
 void about_pressed(GtkWidget *, gpointer);
 void add_pressed(GtkWidget *, gpointer);
-void radio_yes_pressed(GtkWidget *, gpointer);
-void radio_no_pressed(GtkWidget *, gpointer);
-void entry_modified(GtkWidget *, gpointer);
+void str_edited_callback(GtkCellRendererText *, gchar * , gchar *, gpointer);
+void knob_toggled_callback(GtkCellRendererToggle *, gchar *, gpointer);
 void add_yes_pressed(GtkWidget *, gpointer);
 void add_no_pressed(GtkWidget *, gpointer);
 void save_geometry(void);
@@ -86,49 +86,17 @@ void save_geometry(void);
 
 /* These need to be accessed from the callback functions too */
 
-GtkWidget **radio_yes1, **radio_no1;
-GSList **group1;
 int r_num;
 RC_NODE *r_ptr;
 
-GtkWidget **knob_label;
-GtkWidget **knob_align;
-GtkWidget **knob_event;
-GtkWidget **str_label;
-GtkWidget **str_event;
-GtkWidget **str_entry;
-GtkTooltips **knob_tips;
-GtkTooltips **str_tips;
-GtkWidget **knob_status;
-GtkWidget **str_status;
-
 GtkListStore *knob_store;
-GtkTreeIter   knob_iter;
-GtkWidget *knob_tree;
-GtkCellRenderer *knob_status_renderer;
-GtkTreeViewColumn *knob_status_column;
-GtkCellRenderer *knob_name_renderer;
-GtkTreeViewColumn *knob_name_column;
-GtkCellRenderer *knob_value_renderer;
-GtkTreeViewColumn *knob_value_column;
-
 GtkListStore *str_store;
-GtkTreeIter   str_iter;
-GtkWidget *str_tree;
-GtkCellRenderer *str_status_renderer;
-GtkTreeViewColumn *str_status_column;
-GtkCellRenderer *str_name_renderer;
-GtkTreeViewColumn *str_name_column;
-GtkCellRenderer *str_value_renderer;
-GtkTreeViewColumn *str_value_column;
 
 int s_num;
 RC_NODE *s_ptr;
 
 int dirty;
 
-GtkWidget *mytable1;
-GtkWidget *mytable2;
 GtkWidget *msg_window;
 GtkWidget *msg_button1;
 GtkWidget *msg_button2;
@@ -187,8 +155,6 @@ int
 create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 {
 
-  RC_NODE *work;
-
   GtkWidget *quit_button;
   GtkWidget *about_button;
   GtkWidget *about_icon;
@@ -223,6 +189,25 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   GtkWidget *scrolled_window1;
   GtkWidget *scrolled_window2;
+
+  /* GtkTreeView stuff */
+  GtkTreeIter   knob_iter;
+  GtkWidget *knob_tree;
+  GtkCellRenderer *knob_status_renderer;
+  GtkTreeViewColumn *knob_status_column;
+  GtkCellRenderer *knob_name_renderer;
+  GtkTreeViewColumn *knob_name_column;
+  GtkCellRenderer *knob_value_renderer;
+  GtkTreeViewColumn *knob_value_column;
+
+  GtkTreeIter   str_iter;
+  GtkWidget *str_tree;
+  GtkCellRenderer *str_status_renderer;
+  GtkTreeViewColumn *str_status_column;
+  GtkCellRenderer *str_name_renderer;
+  GtkTreeViewColumn *str_name_column;
+  GtkCellRenderer *str_value_renderer;
+  GtkTreeViewColumn *str_value_column;
 
   int i;
   char *homedir;
@@ -302,7 +287,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   g_list_free (icon_list);
 
   /* Basic buttons */
-  commit_button = gtk_button_new_from_stock(GTK_STOCK_SAVE);
+  commit_button = gtk_button_new_from_stock(CHANGED_ICON);
   quit_button = gtk_button_new_from_stock(GTK_STOCK_QUIT);
 
   about_button = gtk_button_new();
@@ -363,73 +348,11 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   g_signal_connect(GTK_OBJECT(add_button), "clicked",\
 		   GTK_SIGNAL_FUNC(add_pressed), NULL);
 
-  mytable1=gtk_table_new(num_knobs*2, 4, FALSE);
-  gtk_table_set_col_spacings(GTK_TABLE(mytable1), 10);
-
-  /* Dynamic stuff generated at run time */
-  /* First the knobs */
-  work=rc_knobs;
-
-  /* Reserve memory for our pointer arrays */
-  knob_label=malloc(2*num_knobs*sizeof(GtkWidget *));
-  knob_event=malloc(2*num_knobs*sizeof(GtkWidget *));
-  radio_yes1=malloc(2*num_knobs*sizeof(GtkWidget *));
-  radio_no1=malloc(2*num_knobs*sizeof(GtkWidget *));
-  group1=malloc(2*num_knobs*sizeof(GtkWidget *));
-  knob_tips=malloc(2*num_knobs*sizeof(GtkTooltips *));
-
-  knob_status=malloc(2*num_knobs*sizeof(GtkWidget *));
 
   vbox1 = gtk_vbox_new (FALSE, 2);
 
   r_num=num_knobs;
   s_num=num_str;
-
-/*   for(i=0;i<num_knobs;i++) { */
-
-     /* No user comments yet */
-/*     (rc_knobs+i)->user_comment=0; */
-
-/*     radio_yes1[i]=gtk_radio_button_new_with_label(NULL, "yes"); */
-/*     group1[i]=gtk_radio_button_get_group(GTK_RADIO_BUTTON(radio_yes1[i])); */
-/*     radio_no1[i]=gtk_radio_button_new_with_label(group1[i], "no"); */
-
-/*     if((rc_knobs+i)->knob_val==KNOB_IS_NO) { */
-
-/*       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_no1[i]), TRUE); */
-
-/*     }  */
-
-/*     g_signal_connect(GTK_OBJECT(radio_yes1[i]), "pressed", */
-/* 		     GTK_SIGNAL_FUNC(radio_yes_pressed), NULL); */
-
-/*     g_signal_connect(GTK_OBJECT(radio_no1[i]), "pressed", */
-/* 		     GTK_SIGNAL_FUNC(radio_no_pressed), NULL); */
-
-
-/*     knob_status[i]=gtk_image_new_from_stock(UNCHANGED_ICON, GTK_ICON_SIZE_MENU); */
-
-/*     knob_event[i] = gtk_event_box_new(); */
-/*     knob_label[i] = gtk_label_new(work->name); */
-/*     gtk_misc_set_alignment(GTK_MISC(knob_label[i]), 1.0 , 0.5); */
-/*     gtk_container_add(GTK_CONTAINER(knob_event[i]), knob_label[i]); */
-
-/*     knob_tips[i]=gtk_tooltips_new(); */
-/*     gtk_tooltips_set_tip(knob_tips[i],knob_event[i], (rc_knobs+i)->comment, ""); */
-/*     gtk_tooltips_enable(knob_tips[i]); */
-
-/*     gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_status[i]), */
-/* 		     0,1, i, i+1, 0, GTK_EXPAND, 0, 0); */
-/*     gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_event[i]),  */
-/* 		     1,2, i, i+1, 0, GTK_EXPAND, 0, 0); */
-/*     gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(radio_yes1[i]),  */
-/* 		     2,3, i, i+1, 0, GTK_EXPAND, 0, 0); */
-/*     gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(radio_no1[i]),  */
-/* 		     3, 4, i, i+1, 0, GTK_EXPAND, 0, 0); */
-
-/*     work++; */
-
-/*   } */
 
 
   knob_store = gtk_list_store_new(KNOB_COLUMNS, 
@@ -444,7 +367,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
     gtk_list_store_append(knob_store, &knob_iter);
     gtk_list_store_set(knob_store, &knob_iter,
-		       KNOB_STATUS, NULL,
+		       KNOB_STATUS, UNCHANGED_ICON,
 		       KNOB_NAME, (rc_knobs+i)->name,
 		       KNOB_VALUE, (rc_knobs+i)->knob_val==KNOB_IS_NO ? FALSE : TRUE,
 			-1);
@@ -453,12 +376,11 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   knob_tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL(knob_store));
 
-
   knob_status_renderer = gtk_cell_renderer_pixbuf_new();
-  g_object_set(knob_status_renderer,"stock-id", GTK_STOCK_REMOVE, NULL);
  
   knob_status_column = gtk_tree_view_column_new_with_attributes("S",
 								knob_status_renderer,
+								"stock-id", KNOB_STATUS,
 								NULL);
 
   gtk_tree_view_column_set_resizable(knob_status_column, FALSE);
@@ -476,6 +398,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   gtk_tree_view_append_column(GTK_TREE_VIEW(knob_tree), knob_name_column);
 
   knob_value_renderer = gtk_cell_renderer_toggle_new();
+  g_signal_connect(knob_value_renderer, "toggled", (GCallback) knob_toggled_callback, NULL);
   knob_value_column = gtk_tree_view_column_new_with_attributes("Enabled",
 							       knob_value_renderer,
 							       "active", KNOB_VALUE,
@@ -515,81 +438,23 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   gtk_box_set_homogeneous(GTK_BOX(vbox1), FALSE);
   gtk_container_add(GTK_CONTAINER(window), vbox1);
 
-/*   gtk_widget_show(mynotebook); */
-/*   gtk_widget_show(vbox1); */
-
-/*   for(i=0;i<num_knobs;i++) { */
-
-/*     gtk_widget_show(knob_status[i]); */
-/*     gtk_widget_show(knob_event[i]); */
-/*     gtk_widget_show(knob_label[i]); */
-/*     gtk_widget_show(radio_yes1[i]); */
-/*     gtk_widget_show(radio_no1[i]); */
-
-/*   } */
-
   /* Now, the strings */
-  work=rc_strings;
-
-  mytable2=gtk_table_new(num_knobs*2, 3, FALSE);
-  gtk_table_set_col_spacings(GTK_TABLE(mytable2), 10);
-  gtk_table_set_homogeneous(GTK_TABLE(mytable2), FALSE);
-
-  /* Allocate memory for our pointer arrays */
-  str_label=malloc(2*num_str*sizeof(GtkWidget *));
-  str_entry=malloc(2*num_str*sizeof(GtkWidget *));
-  str_event=malloc(2*num_str*sizeof(GtkWidget *));
-  str_tips=malloc(2*num_str*sizeof(GtkTooltips *));	
-  str_status=malloc(2*num_str*sizeof(GtkWidget *));
 
   vbox2 = gtk_vbox_new(FALSE, 2);
 
-/*   for(i=0;i<num_str;i++) { */
+  str_store = gtk_list_store_new(STR_COLUMNS,
+				 G_TYPE_STRING, 
+				 G_TYPE_STRING, 
+				 G_TYPE_STRING);
 
-     /* No user comments yet */
-/*     (rc_strings+i)->user_comment=0; */
-
-/*     str_label[i]=gtk_label_new(work->name); */
-/*     str_event[i]=gtk_event_box_new(); */
-/*     gtk_container_add(GTK_CONTAINER(str_event[i]), str_label[i]); */
-
-/*     str_status[i]=gtk_image_new_from_stock(UNCHANGED_ICON, GTK_ICON_SIZE_MENU); */
-/*     str_tips[i]=gtk_tooltips_new(); */
-/*     gtk_tooltips_set_tip(str_tips[i], str_event[i], (rc_strings+i)->comment, ""); */
-/*     gtk_tooltips_enable(str_tips[i]); */
-
-/*     str_entry[i]=gtk_entry_new(); */
-/*     gtk_entry_set_max_length(GTK_ENTRY(str_entry[i]), 255); */
-/*     gtk_entry_set_text(GTK_ENTRY(str_entry[i]), work->value); */
-
-/*     g_signal_connect(GTK_OBJECT(str_entry[i]), "changed", */
-/* 		     GTK_SIGNAL_FUNC(entry_modified), NULL); */
-
-
-/*     gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_status[i]), */
-/* 		     0, 1, i, i+1, 0, GTK_EXPAND, 0, 0); */
-/*     gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_event[i]) */
-/* 		     , 1, 2, i, i+1, NULL, NULL, 0, 0); */
-/*     gtk_table_attach_defaults(GTK_TABLE(mytable2), GTK_WIDGET(str_entry[i]) */
-/* 			      , 2, 3, i, i+1); */
-/*     work++; */
-
-/*   } */
-
-
-    str_store = gtk_list_store_new(STR_COLUMNS,
-				   G_TYPE_STRING, 
-				   G_TYPE_STRING, 
-				   G_TYPE_STRING);
-
-    for(i=0;i<num_str;i++) {
+  for(i=0;i<num_str;i++) {
 
     /* No user comments yet */
     (rc_strings+i)->user_comment=0;
 
     gtk_list_store_append(str_store, &str_iter);
     gtk_list_store_set(str_store, &str_iter,
-		       STR_STATUS, NULL,
+		       STR_STATUS, UNCHANGED_ICON,
 		       STR_NAME, (rc_strings+i)->name,
 		       STR_VALUE, (rc_strings+i)->value,
 		       -1);
@@ -598,13 +463,12 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   str_tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL(str_store));
 
-
   str_status_renderer = gtk_cell_renderer_pixbuf_new();
-  g_object_set(str_status_renderer,"stock-id", GTK_STOCK_REMOVE, NULL);
- 
+
   str_status_column = gtk_tree_view_column_new_with_attributes("S",
-								str_status_renderer,
-								NULL);
+							       str_status_renderer,
+							       "stock-id", STR_STATUS,
+							       NULL);
 
   gtk_tree_view_column_set_resizable(str_status_column, FALSE);
   gtk_tree_view_column_set_alignment(str_status_column, 0.5);
@@ -622,6 +486,8 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   str_value_renderer = gtk_cell_renderer_text_new();
   g_object_set(str_value_renderer,"editable", TRUE, NULL);
+  g_signal_connect(str_value_renderer, "edited", (GCallback) str_edited_callback, NULL);
+  
   str_value_column = gtk_tree_view_column_new_with_attributes("Value",
 							       str_value_renderer,
 							      "text", STR_VALUE,
@@ -646,31 +512,6 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 					, str_tree);
 
   gtk_notebook_append_page(GTK_NOTEBOOK(mynotebook), scrolled_window2, tab_str);
-
-/*   for(i=0;i<num_str;i++) { */
-
-/*     gtk_widget_show(str_event[i]); */
-/*     gtk_widget_show(str_label[i]); */
-/*     gtk_widget_show(str_entry[i]); */
-/*     gtk_widget_show(str_status[i]); */
-
-/*   } */
-
-  /* Finally, the static widgets */
-/*   gtk_widget_show(hseparator1); */
-/*   gtk_widget_show(h_buttons); */
-/*   gtk_widget_show(commit_button); */
-/*   gtk_widget_show(quit_button); */
-/*   gtk_widget_show(about_button); */
-/*   gtk_widget_show(about_label); */
-/*   gtk_widget_show(about_hbox); */
-/*   gtk_widget_show(about_icon); */
-/*   gtk_widget_show(about_align); */
-/*   gtk_widget_show(add_button); */
-/*   gtk_widget_show (scrolled_window2); */
-/*   gtk_widget_show (mytable2); */
-/*   gtk_widget_show (scrolled_window1); */
-/*   gtk_widget_show (mytable1); */
 
   gtk_widget_show_all(window);
 
@@ -829,8 +670,8 @@ commit_pressed( GtkWidget *widget, gpointer data)
 	    work->user_added=USER_ADDED_NO;
 	    work->modified=MODIFIED_NO;
 	    work->knob_orig=work->knob_val;
-	    gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]),
-				     UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
+/* 	    gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]), */
+/* 				     UNCHANGED_ICON,GTK_ICON_SIZE_MENU); */
 	  }
 
 	  work++;
@@ -858,8 +699,8 @@ commit_pressed( GtkWidget *widget, gpointer data)
 	    work->modified=MODIFIED_NO;
 	    work->user_added=USER_ADDED_NO;
 	    strncpy(work->orig, work->value, 255);
-	    gtk_image_set_from_stock(GTK_IMAGE(str_status[i]),
-				     UNCHANGED_ICON, GTK_ICON_SIZE_MENU);
+/* 	    gtk_image_set_from_stock(GTK_IMAGE(str_status[i]), */
+/* 				     UNCHANGED_ICON, GTK_ICON_SIZE_MENU); */
 	  }
 
 	  work++;
@@ -914,163 +755,148 @@ commit_pressed( GtkWidget *widget, gpointer data)
 
 }
 
-/* This callback is called whenever a 'yes'
- * radio button is pressed. It has to find
- * out which widget generated the signal and
- * modify the relevant RC_NODE
- */
-void 
-radio_yes_pressed( GtkWidget *widget, gpointer data)
-{
-  int i;
-  RC_NODE *work;
 
-  work=r_ptr;
-
-  for(i=0;i<=r_num;i++) {
-
-    if(widget==radio_yes1[i]) {
-
-      break;
-
-    }
-
-#ifdef VERBOSE_CONSOLE
-    printf("Pointer comparison: %x %x\n", widget, radio_yes1[i]);
-#endif
-    work++;
-  }
-
-#ifdef VERBOSE_CONSOLE
-  printf("You pressed YES on widget %i : %s\n", i, work->name);	
-#endif
-
-  work->knob_val=KNOB_IS_YES;
-
-  if(work->knob_orig==KNOB_IS_NO) {
-
-    work->modified=MODIFIED_YES;
-    dirty++;
-    gtk_widget_set_sensitive(commit_button, TRUE);
-    gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]),
-			     GTK_STOCK_SAVE, GTK_ICON_SIZE_MENU);
-
-
-  } else if(work->user_added==USER_ADDED_NO) {
-
-    work->modified=MODIFIED_NO;
-    gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]),
-			     UNCHANGED_ICON, GTK_ICON_SIZE_MENU);
-    if(dirty>0) dirty--;
-    if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
-
-  }
-
-}
-
-/* Same as above for 'no' buttons */
-void 
-radio_no_pressed( GtkWidget *widget, gpointer data)
-{
-
-  int i;
-  RC_NODE *work;
-
-  work=r_ptr;
-
-  for(i=0;i<=r_num;i++) {
-
-    if(widget==radio_no1[i]) {
-
-      break;
-
-    }
-
-#ifdef VERBOSE_CONSOLE
-    printf("Pointer comparison: %x %x\n", widget, radio_yes1[i]);
-#endif
-    work++;
-
-  }
-
-#ifdef VERBOSE_CONSOLE
-  printf("You pressed NO on widget %i : %s\n", i, work->name);
-#endif
-
-  work->knob_val=KNOB_IS_NO;
-  if(work->knob_orig==KNOB_IS_YES) {
-
-    work->modified=MODIFIED_YES;
-    dirty++;
-    gtk_widget_set_sensitive(commit_button, TRUE);
-    gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]),
-			     GTK_STOCK_SAVE, GTK_ICON_SIZE_MENU);
-
-  } else if(work->user_added==USER_ADDED_NO) {
-
-    work->modified=MODIFIED_NO;
-    if(dirty>0) dirty--;
-    if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
-    gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]),
-			     UNCHANGED_ICON, GTK_ICON_SIZE_MENU);
-  }
-
-}
-
-/* If an string is modified by the user, this 
+/* If a string is modified by the user, this 
  * function will be called. It finds which widget
  * has been modified and syncs the new entry value
  * with the value stored in the RC_NODE structure.
  */
-void 
-entry_modified(GtkWidget *widget, gpointer data)
+void
+str_edited_callback(GtkCellRendererText *cell,
+		    gchar               *path_string,
+		    gchar               *new_text,
+		    gpointer             user_data)
 {
+  int retval, i;
+  GtkTreeIter str_iter;
+
+  retval=gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(str_store),
+                                             &str_iter,
+                                             path_string);
+
+  gtk_list_store_set(str_store, &str_iter,
+		     STR_VALUE, new_text,
+		     -1);
+
+#ifdef VERBOSE_CONSOLE
+  printf("You've modified: %s -> %s\n",s_ptr[i].name, new_text);
+#endif
+
+  i=atoi(path_string);
+
+  strncpy(s_ptr[i].value, new_text, 255);
+  if(!strncmp(s_ptr[i].value, s_ptr[i].orig, 255) && s_ptr[i].user_added==USER_ADDED_NO) {
+
+    s_ptr[i].modified=MODIFIED_NO;
+    if(dirty>0) dirty--;
+    if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
+    gtk_list_store_set(str_store, &str_iter,
+		       STR_STATUS, UNCHANGED_ICON,
+		       -1);
+
+  } else {
+
+    s_ptr[i].modified=MODIFIED_YES;
+    dirty++;
+    gtk_widget_set_sensitive(commit_button, TRUE);
+    gtk_list_store_set(str_store, &str_iter,
+		       STR_STATUS, CHANGED_ICON,
+		       -1);
+
+  }
+
+  
+}
+
+/* knob cell toggle callback */
+void
+knob_toggled_callback(GtkCellRendererToggle *cell,
+		      gchar                 *path_string,
+		      gpointer               user_data)
+{
+  GtkTreeIter knob_iter;
+  GValue my_value= {0, };
+  gboolean retval;
   int i;
-  RC_NODE *work;
-  char *entry_val;
 
-  work=s_ptr;
+  retval=gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(knob_store),
+                                             &knob_iter,
+                                             path_string);
 
-  for(i=0;i<=s_num;i++) {
+  gtk_tree_model_get_value(GTK_TREE_MODEL(knob_store),
+ 			   &knob_iter, 
+ 			   KNOB_VALUE,
+ 			   &my_value);
 
-    if(widget==str_entry[i]) {
-      break;
+  retval=g_value_get_boolean(&my_value);
+
+#ifdef VERBOSE_CONSOLE
+  printf("You've toggled: %s -> %i\n", path_string, retval);
+#endif
+
+  i=atoi(path_string);
+
+  if(retval==TRUE) {
+
+    gtk_list_store_set(knob_store, &knob_iter,
+		       KNOB_VALUE, FALSE,
+		       -1);
+    
+    r_ptr[i].knob_val=KNOB_IS_NO;
+
+    if(r_ptr[i].knob_orig==KNOB_IS_YES) {
+
+      r_ptr[i].modified=MODIFIED_YES;
+      dirty++;
+      gtk_widget_set_sensitive(commit_button, TRUE);
+      gtk_list_store_set(knob_store, &knob_iter,
+			 KNOB_STATUS, CHANGED_ICON,
+			 -1);
+
+    } else if(r_ptr[i].user_added==USER_ADDED_NO) {
+
+      r_ptr[i].modified=MODIFIED_NO;
+      if(dirty>0) dirty--;
+      if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
+      gtk_list_store_set(knob_store, &knob_iter,
+			 KNOB_STATUS, UNCHANGED_ICON,
+			 -1);
+  
+    }
+
+  } else {
+
+    gtk_list_store_set(knob_store, &knob_iter,
+		       KNOB_VALUE, TRUE,
+		       -1);
+
+    r_ptr[i].knob_val=KNOB_IS_YES;
+
+    if(r_ptr[i].knob_orig==KNOB_IS_NO) {
+
+      r_ptr[i].modified=MODIFIED_YES;
+      dirty++;
+      gtk_widget_set_sensitive(commit_button, TRUE);
+      gtk_list_store_set(knob_store, &knob_iter,
+			 KNOB_STATUS, CHANGED_ICON,
+			 -1);
+
+    } else if(r_ptr[i].user_added==USER_ADDED_NO) {
+
+      r_ptr[i].modified=MODIFIED_NO;
+      if(dirty>0) dirty--;
+      if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
+      gtk_list_store_set(knob_store, &knob_iter,
+			 KNOB_STATUS, UNCHANGED_ICON,
+			 -1);
 
     }
 
-#ifdef VERBOSE_CONSOLE
-    printf("Pointer comparison: %x %x\n", widget, radio_yes1[i]);
-#endif
-    work++;
-
   }
 
-  entry_val=(char *) gtk_entry_get_text(GTK_ENTRY(widget));
-
-#ifdef VERBOSE_CONSOLE
-  printf("You modified widget %s (%i) : %s -> %s\n", work->name, i,
-	 work->value, entry_val);
-#endif
-
-  strncpy(work->value, entry_val, 255);
-  if(!strncmp(work->value, work->orig, 255) && work->user_added==USER_ADDED_NO) {
-
-    work->modified=MODIFIED_NO;
-    if(dirty>0) dirty--;
-    if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
-    gtk_image_set_from_stock(GTK_IMAGE(str_status[i]),
-			     UNCHANGED_ICON, GTK_ICON_SIZE_MENU);
-  } else {
-
-    work->modified=MODIFIED_YES;
-    dirty++;
-    gtk_widget_set_sensitive(commit_button, TRUE);
-    gtk_image_set_from_stock(GTK_IMAGE(str_status[i]),
-			     GTK_STOCK_SAVE, GTK_ICON_SIZE_MENU);
-  }
+  g_value_unset(&my_value);
 
 }
-
 /* The usual 'About' window */
 void 
 about_pressed(GtkWidget *widget, gpointer data)
@@ -1078,18 +904,18 @@ about_pressed(GtkWidget *widget, gpointer data)
 
   GtkWidget *dialog;
 
-  dialog = gtk_message_dialog_new (GTK_WINDOW(window),
-				   GTK_DIALOG_DESTROY_WITH_PARENT,
-				   GTK_MESSAGE_INFO,
-				   GTK_BUTTONS_OK,
-				   "The Fish "
-				   THE_FISH_VERSION
-				   "\nCopyright (c) 2002-2004, "
-				   "Miguel Mendez\nE-Mail: <flynn@energyhq.es.eu.org>\n"
-				   "http://www.energyhq.es.eu.org/thefish.html\n");
+  dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				  GTK_DIALOG_DESTROY_WITH_PARENT,
+				  GTK_MESSAGE_INFO,
+				  GTK_BUTTONS_OK,
+				  "The Fish "
+				  THE_FISH_VERSION
+				  "\nCopyright (c) 2002-2004, "
+				  "Miguel Mendez\nE-Mail: <flynn@energyhq.es.eu.org>\n"
+				  "http://www.energyhq.es.eu.org/thefish.html\n");
 
-  gtk_dialog_run (GTK_DIALOG(dialog));
-  gtk_widget_destroy (dialog);
+  gtk_dialog_run(GTK_DIALOG(dialog));
+  gtk_widget_destroy(dialog);
 
 }
 
@@ -1111,12 +937,12 @@ add_pressed(GtkWidget * widget, gpointer data)
 
     add_yes_button = gtk_button_new_from_stock(GTK_STOCK_APPLY);
 
-    g_signal_connect(GTK_OBJECT(add_yes_button), "clicked",\
+    g_signal_connect(GTK_OBJECT(add_yes_button), "clicked",
 		     GTK_SIGNAL_FUNC(add_yes_pressed), NULL);
 
     add_no_button = gtk_button_new_from_stock(GTK_STOCK_CANCEL);
 
-    g_signal_connect(GTK_OBJECT(add_no_button), "clicked",\
+    g_signal_connect(GTK_OBJECT(add_no_button), "clicked",
 		     GTK_SIGNAL_FUNC(add_no_pressed), NULL);
 
     add_hsep = gtk_hseparator_new();
@@ -1287,47 +1113,47 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
 
       gtk_notebook_set_current_page(GTK_NOTEBOOK(mynotebook),(gint) 0);
 
-      radio_yes1[r_num]=gtk_radio_button_new_with_label(NULL, "yes");
-      group1[r_num]=gtk_radio_button_get_group(GTK_RADIO_BUTTON(radio_yes1[r_num]));
-      radio_no1[r_num]=gtk_radio_button_new_with_label(group1[r_num], "no");
-      knob_status[r_num]=gtk_image_new_from_stock(GTK_STOCK_SAVE, GTK_ICON_SIZE_MENU);
+/*       radio_yes1[r_num]=gtk_radio_button_new_with_label(NULL, "yes"); */
+/*       group1[r_num]=gtk_radio_button_get_group(GTK_RADIO_BUTTON(radio_yes1[r_num])); */
+/*       radio_no1[r_num]=gtk_radio_button_new_with_label(group1[r_num], "no"); */
+/*       knob_status[r_num]=gtk_image_new_from_stock(CHANGED_ICON, GTK_ICON_SIZE_MENU); */
 
-      if(r_ptr[r_num].knob_val==KNOB_IS_NO) {
+/*       if(r_ptr[r_num].knob_val==KNOB_IS_NO) { */
 
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_no1[r_num]), TRUE);
+/* 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_no1[r_num]), TRUE); */
 
-      }
+/*       } */
 
-      g_signal_connect(GTK_OBJECT(radio_yes1[r_num]), "pressed",
-		       GTK_SIGNAL_FUNC(radio_yes_pressed), NULL);
+/*       g_signal_connect(GTK_OBJECT(radio_yes1[r_num]), "pressed", */
+/* 		       GTK_SIGNAL_FUNC(radio_yes_pressed), NULL); */
 
-      g_signal_connect(GTK_OBJECT(radio_no1[r_num]), "pressed",
-		       GTK_SIGNAL_FUNC(radio_no_pressed), NULL);
+/*       g_signal_connect(GTK_OBJECT(radio_no1[r_num]), "pressed", */
+/* 		       GTK_SIGNAL_FUNC(radio_no_pressed), NULL); */
 
-      knob_label[r_num]=gtk_label_new(r_ptr[r_num].name);
-      knob_event[r_num]=gtk_event_box_new();
-      gtk_container_add(GTK_CONTAINER(knob_event[r_num]), knob_label[r_num]);
+/*       knob_label[r_num]=gtk_label_new(r_ptr[r_num].name); */
+/*       knob_event[r_num]=gtk_event_box_new(); */
+/*       gtk_container_add(GTK_CONTAINER(knob_event[r_num]), knob_label[r_num]); */
 
-      knob_tips[r_num]=gtk_tooltips_new();
-      gtk_tooltips_set_tip(knob_tips[r_num], knob_event[r_num], r_ptr[r_num].comment, "");
-      gtk_tooltips_enable(knob_tips[r_num]);
+/*       knob_tips[r_num]=gtk_tooltips_new(); */
+/*       gtk_tooltips_set_tip(knob_tips[r_num], knob_event[r_num], r_ptr[r_num].comment, ""); */
+/*       gtk_tooltips_enable(knob_tips[r_num]); */
 
-      gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_status[r_num]),
-		       0, 1, r_num, r_num+1, 0, GTK_EXPAND, 0, 0);
-      gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_event[r_num]), 
-		       1, 2, r_num, r_num+1, 0, GTK_EXPAND, 0, 0);
-      gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(radio_yes1[r_num]), 
-		       2, 3, r_num, r_num+1, 0, GTK_EXPAND, 0, 0);
-      gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(radio_no1[r_num]), 
-		       3, 4, r_num, r_num+1, 0, GTK_EXPAND, 0, 0);
+/*       gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_status[r_num]), */
+/* 		       0, 1, r_num, r_num+1, 0, GTK_EXPAND, 0, 0); */
+/*       gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_event[r_num]),  */
+/* 		       1, 2, r_num, r_num+1, 0, GTK_EXPAND, 0, 0); */
+/*       gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(radio_yes1[r_num]),  */
+/* 		       2, 3, r_num, r_num+1, 0, GTK_EXPAND, 0, 0); */
+/*       gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(radio_no1[r_num]),  */
+/* 		       3, 4, r_num, r_num+1, 0, GTK_EXPAND, 0, 0); */
 
-      gtk_widget_show(knob_status[r_num]);
-      gtk_widget_show(knob_event[r_num]);
-      gtk_widget_show(knob_label[r_num]);
-      gtk_widget_show(radio_yes1[r_num]);
-      gtk_widget_show(radio_no1[r_num]);
+/*       gtk_widget_show(knob_status[r_num]); */
+/*       gtk_widget_show(knob_event[r_num]); */
+/*       gtk_widget_show(knob_label[r_num]); */
+/*       gtk_widget_show(radio_yes1[r_num]); */
+/*       gtk_widget_show(radio_no1[r_num]); */
 
-      r_num++;
+/*       r_num++; */
 
       /* Is a string */
     } else {
@@ -1348,36 +1174,36 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
       /* Switch page */
       gtk_notebook_set_current_page(GTK_NOTEBOOK(mynotebook), (gint) 1);
 
-      str_label[s_num]=gtk_label_new(s_ptr[s_num].name);
-      str_event[s_num]=gtk_event_box_new();
-      gtk_container_add(GTK_CONTAINER(str_event[s_num]), str_label[s_num]);
+/*       str_label[s_num]=gtk_label_new(s_ptr[s_num].name); */
+/*       str_event[s_num]=gtk_event_box_new(); */
+/*       gtk_container_add(GTK_CONTAINER(str_event[s_num]), str_label[s_num]); */
 
-      str_tips[s_num]=gtk_tooltips_new();
-      gtk_tooltips_set_tip(str_tips[s_num], str_event[s_num], s_ptr[s_num].comment, "");
-      gtk_tooltips_enable(str_tips[s_num]);
+/*       str_tips[s_num]=gtk_tooltips_new(); */
+/*       gtk_tooltips_set_tip(str_tips[s_num], str_event[s_num], s_ptr[s_num].comment, ""); */
+/*       gtk_tooltips_enable(str_tips[s_num]); */
 
-      str_status[s_num]=gtk_image_new_from_stock(GTK_STOCK_SAVE, GTK_ICON_SIZE_MENU);
+/*       str_status[s_num]=gtk_image_new_from_stock(CHANGED_ICON, GTK_ICON_SIZE_MENU); */
 
-      str_entry[s_num]=gtk_entry_new();
+/*       str_entry[s_num]=gtk_entry_new(); */
 
-      gtk_entry_set_max_length(GTK_ENTRY(str_entry[s_num]), 255);
+/*       gtk_entry_set_max_length(GTK_ENTRY(str_entry[s_num]), 255); */
 
-      gtk_entry_set_text(GTK_ENTRY(str_entry[s_num]), s_ptr[s_num].value);
+/*       gtk_entry_set_text(GTK_ENTRY(str_entry[s_num]), s_ptr[s_num].value); */
 
-      g_signal_connect(GTK_OBJECT(str_entry[s_num]), "changed",
-		       GTK_SIGNAL_FUNC(entry_modified), NULL);
+/*       g_signal_connect(GTK_OBJECT(str_entry[s_num]), "changed", */
+/* 		       GTK_SIGNAL_FUNC(entry_modified), NULL); */
 
-      gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_status[s_num])
-		       , 0, 1, s_num, s_num+1, 0, GTK_EXPAND, 0, 0);
-      gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_event[s_num])
-		       , 1, 2, s_num, s_num+1, NULL, NULL, 0, 0);
-      gtk_table_attach_defaults(GTK_TABLE(mytable2), GTK_WIDGET(str_entry[s_num])
-				, 2, 3, s_num, s_num+1);
+/*       gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_status[s_num]) */
+/* 		       , 0, 1, s_num, s_num+1, 0, GTK_EXPAND, 0, 0); */
+/*       gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_event[s_num]) */
+/* 		       , 1, 2, s_num, s_num+1, NULL, NULL, 0, 0); */
+/*       gtk_table_attach_defaults(GTK_TABLE(mytable2), GTK_WIDGET(str_entry[s_num]) */
+/* 				, 2, 3, s_num, s_num+1); */
 
-      gtk_widget_show(str_status[s_num]);
-      gtk_widget_show(str_entry[s_num]);
-      gtk_widget_show(str_label[s_num]);
-      gtk_widget_show(str_event[s_num]);
+/*       gtk_widget_show(str_status[s_num]); */
+/*       gtk_widget_show(str_entry[s_num]); */
+/*       gtk_widget_show(str_label[s_num]); */
+/*       gtk_widget_show(str_event[s_num]); */
 
       s_num++;			
 

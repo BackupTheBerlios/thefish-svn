@@ -21,13 +21,8 @@ LDFLAGS+= -ldialog -lncurses
 LDFLAGS+= -L${LOCALBASE}/lib -lefence
 .endif
 
-.if !defined(WITHOUT_PARSER_NG)
-PARSER_OBJ=	lex.yy.o parser_ng.o
+PARSER_OBJ=	lex.yy.o parser.o
 CFLAGS+= -DYY_NO_UNPUT
-.else
-CFLAGS+= -DWITHOUT_PARSER_NG
-PARSER_OBJ=	parser.o
-.endif
 
 .if !defined (NO_GUI)
 OBJECTS= ${PARSER_OBJ} main.o gtk_ui.o
@@ -43,9 +38,7 @@ all:	$(OBJECTS)
 clean:
 	rm -f *.o lex.yy.* thefish thefish.core
 
-.if !defined(WITHOUT_PARSER_NG)
 lex.yy.o:	lex.yy.c
 
 lex.yy.c:	rc_conf.l
 		lex rc_conf.l
-.endif
