@@ -710,21 +710,24 @@ commit_pressed(GtkWidget *widget, gpointer data)
 	    work->modified = MODIFIED_NO;
 	    work->knob_orig = work->knob_val;
 
-	    /* Hackish, but it works */
-	    snprintf(path_string, 255,"%i",i);
-	    retval=gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(knob_store),
-						       &knob_iter,
-						       path_string);
-	    gtk_list_store_set(knob_store, &knob_iter,
-			       KNOB_STATUS, UNCHANGED_ICON,
-			       -1);
-
-
 	  }
 
 	  work++;
 
 	} 
+
+	retval = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(knob_store), &knob_iter);
+
+	while(retval) {
+
+	  gtk_list_store_set(knob_store, &knob_iter,
+			     KNOB_STATUS, UNCHANGED_ICON,
+			     -1);
+
+	  retval = gtk_tree_model_iter_next(GTK_TREE_MODEL(knob_store), &knob_iter);
+
+	}
+
 
 	/* modified strings */
 	work = s_ptr;
@@ -748,19 +751,23 @@ commit_pressed(GtkWidget *widget, gpointer data)
 	    work->user_added = USER_ADDED_NO;
 	    strncpy(work->orig, work->value, 255);
 
-	    snprintf(path_string, 255,"%i",i);
-	    retval=gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(str_store),
-						       &str_iter,
-						       path_string);
-	    gtk_list_store_set(str_store, &str_iter,
-			       STR_STATUS, UNCHANGED_ICON,
-			       -1);
-
 	  }
 
 	  work++;
 
-	}  
+	}
+
+	retval = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(str_store), &str_iter);
+
+	while(retval) {
+
+	  gtk_list_store_set(str_store, &str_iter,
+			     STR_STATUS, UNCHANGED_ICON,
+			     -1);
+
+	  retval = gtk_tree_model_iter_next(GTK_TREE_MODEL(str_store), &str_iter);
+
+	}
 
 	fclose(fd);
 
