@@ -25,6 +25,6 @@
 
 */
 
-#define THE_FISH_VERSION "0.6.2 \"Treadstone\"."
+#define THE_FISH_VERSION "0.6.3 \"Mr. Sandman\"."
 #define RC_DEFAULTS_FILE "/etc/defaults/rc.conf"
 #define RC_FILE "/etc/rc.conf"

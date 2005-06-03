@@ -99,23 +99,6 @@ static RC_NODE *s_ptr;
 
 static int dirty;
 
-/* static GtkWidget *msg_window; */
-/* static GtkWidget *msg_button1; */
-/* static GtkWidget *msg_button2; */
-/* static GtkWidget *quit_yes_button; */
-/* static GtkWidget *quit_no_button; */
-/* static GtkWidget *msg_hsep; */
-/* static GtkWidget *msg_vsep; */
-/* static GtkWidget *msg_vbox; */
-/* static GtkWidget *msg_label; */
-/* static GtkWidget *msg_pixmap; */
-/* static GtkWidget *msg_hbox; */
-/* static GtkWidget *popup_window; */
-/* static GtkWidget *popup_button; */
-/* static GtkWidget *popup_hsep; */
-/* static GtkWidget *popup_vbox; */
-/* static GtkWidget *pixmap1; */
-
 /* Add entry widgets */
 
 static GtkWidget *add_window;
@@ -131,9 +114,6 @@ static GtkWidget *add_frame1;
 static GtkWidget *add_frame2;
 static GtkWidget *add_frame3;
 
-/* The quit confirm window */
-/* static GtkWidget * quit_hbutton; */
-
 /* Avoid trying to create the same window twice */
 static int commit_win_up;
 static int about_win_up;
@@ -142,8 +122,6 @@ static int quit_win_up;
 
 static GtkWidget *commit_button;
 static GtkWidget *window;
-/* static GtkWidget *myviewport1; */
-/* static GtkWidget *myviewport2; */
 static GtkWidget *mynotebook;
 static GtkWidget *my_status;
 
@@ -651,7 +629,6 @@ commit_pressed(GtkWidget *widget, gpointer data)
   char fish_header[255];
   char time_buf[255];
   gboolean retval;
-  char path_string[255];
   time_t comm_time;
 
   not_committed = 0;
@@ -874,7 +851,6 @@ str_tree_on_row(GtkTreeSelection *treeselection,
 {
   guint cont_id;
   int i;
-  char *path_string;
   char *str_data;
   GtkTreeModel *model;
   GtkTreeIter iter;
@@ -930,6 +906,7 @@ str_edited_callback(GtkCellRendererText *cell,
 {
   int retval, i;
   GtkTreeIter str_iter;
+  char *str_data;
 
   retval = gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(str_store),
 					       &str_iter,
@@ -939,11 +916,22 @@ str_edited_callback(GtkCellRendererText *cell,
 		     STR_VALUE, new_text,
 		     -1);
 
+
+  gtk_tree_model_get(GTK_TREE_MODEL(str_store), &str_iter, 
+		     STR_NAME, &str_data,
+		     -1);
+
+  for(i=0; i<s_num; i++) {
+
+    if((strncmp(s_ptr[i].name, str_data, 255)) == 0) break;
+
+  }
+
+  g_free(str_data);
+
 #ifdef VERBOSE_CONSOLE
   printf("You've modified: %s -> %s\n",s_ptr[i].name, new_text);
 #endif
-
-  i = atoi(path_string);
 
   strncpy(s_ptr[i].value, new_text, 255);
 
@@ -979,6 +967,7 @@ knob_toggled_callback(GtkCellRendererToggle *cell,
   GtkTreeIter knob_iter;
   GValue my_value = {0, };
   gboolean retval;
+  char *knob_name;
   int i;
 
   retval = gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(knob_store),
@@ -996,7 +985,17 @@ knob_toggled_callback(GtkCellRendererToggle *cell,
   printf("You've toggled: %s -> %i\n", path_string, retval);
 #endif
 
-  i = atoi(path_string);
+  gtk_tree_model_get(GTK_TREE_MODEL(knob_store), &knob_iter, 
+		     KNOB_NAME, &knob_name,
+		     -1);
+
+  for(i=0; i<r_num; i++) {
+
+    if((strncmp(r_ptr[i].name, knob_name, 255)) == 0) break;
+
+  }
+
+  g_free(knob_name);
 
   if(retval == TRUE) {
 
