@@ -25,6 +25,6 @@
 
 */
 
-#define THE_FISH_VERSION "0.5 \"Mirror Mirror\"."
+#define THE_FISH_VERSION "0.5 \"Time Stands Still (At the Iron Hill)\"."
 #define RC_DEFAULTS_FILE "/etc/defaults/rc.conf"
 #define RC_FILE "/etc/rc.conf"

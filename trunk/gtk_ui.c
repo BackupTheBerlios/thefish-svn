@@ -79,6 +79,8 @@ void knob_toggled_callback(GtkCellRendererToggle *, gchar *, gpointer);
 void add_yes_pressed(GtkWidget *, gpointer);
 void add_no_pressed(GtkWidget *, gpointer);
 void save_geometry(void);
+void knob_tree_on_row(GtkTreeView *, GtkTreePath *, GtkTreeViewColumn *, gpointer);
+void str_tree_on_row(GtkTreeView *, GtkTreePath *, GtkTreeViewColumn *, gpointer);
 
 /* Some defines here */
 #define IS_DIRTY 1
@@ -143,12 +145,16 @@ GtkWidget *window;
 GtkWidget *myviewport1;
 GtkWidget *myviewport2;
 GtkWidget *mynotebook;
+GtkWidget *my_status;
 
 /* Window geometry */
 /* Deprecated for file, we
  * now use human readable data
  */
 int oldsize[2];
+
+/* For the status bar */
+guint old_context_id;
 
 /* This funcion creates the main UI */
 int
@@ -222,6 +228,8 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   r_ptr=rc_knobs;
   s_ptr=rc_strings;
   dirty=NOT_DIRTY;
+
+  old_context_id=0;
 
   /* Define main window */
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -376,6 +384,8 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   knob_tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL(knob_store));
 
+  g_signal_connect(knob_tree, "row-activated", (GCallback) knob_tree_on_row, NULL);
+  
   knob_status_renderer = gtk_cell_renderer_pixbuf_new();
  
   knob_status_column = gtk_tree_view_column_new_with_attributes("S",
@@ -429,12 +439,15 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   tab_str=gtk_label_new("Strings");
 
   mynotebook=gtk_notebook_new();
+  my_status=gtk_statusbar_new();
 
   gtk_notebook_append_page(GTK_NOTEBOOK(mynotebook), scrolled_window1, tab_bools);
 
   gtk_box_pack_start(GTK_BOX(vbox1), mynotebook, TRUE, TRUE, 0);
   gtk_box_pack_start(GTK_BOX(vbox1), hseparator1, FALSE, FALSE, 0);
   gtk_box_pack_start(GTK_BOX(vbox1), h_buttons, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox1), my_status, FALSE, FALSE, 0);
+
   gtk_box_set_homogeneous(GTK_BOX(vbox1), FALSE);
   gtk_container_add(GTK_CONTAINER(window), vbox1);
 
@@ -462,6 +475,8 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   }
 
   str_tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL(str_store));
+
+  g_signal_connect(str_tree, "row-activated", (GCallback) str_tree_on_row, NULL);
 
   str_status_renderer = gtk_cell_renderer_pixbuf_new();
 
@@ -607,6 +622,8 @@ commit_pressed( GtkWidget *widget, gpointer data)
 {
 
   GtkWidget *dialog; /* for the GTK2 dialogs */
+  GtkTreeIter knob_iter;
+  GtkTreeIter str_iter;
 
   int i,not_committed;
   RC_NODE *work;
@@ -614,6 +631,8 @@ commit_pressed( GtkWidget *widget, gpointer data)
   char *rc_file;
   char fish_header[255];
   char time_buf[255];
+  gboolean retval;
+  char path_string[255];
   time_t comm_time;
 
   not_committed=0;
@@ -670,8 +689,17 @@ commit_pressed( GtkWidget *widget, gpointer data)
 	    work->user_added=USER_ADDED_NO;
 	    work->modified=MODIFIED_NO;
 	    work->knob_orig=work->knob_val;
-/* 	    gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]), */
-/* 				     UNCHANGED_ICON,GTK_ICON_SIZE_MENU); */
+
+	    /* Hackish, but it works */
+	    snprintf(path_string, 255,"%i",i);
+	    retval=gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(knob_store),
+						       &knob_iter,
+						       path_string);
+	    gtk_list_store_set(knob_store, &knob_iter,
+			       KNOB_STATUS, UNCHANGED_ICON,
+			       -1);
+
+
 	  }
 
 	  work++;
@@ -699,8 +727,15 @@ commit_pressed( GtkWidget *widget, gpointer data)
 	    work->modified=MODIFIED_NO;
 	    work->user_added=USER_ADDED_NO;
 	    strncpy(work->orig, work->value, 255);
-/* 	    gtk_image_set_from_stock(GTK_IMAGE(str_status[i]), */
-/* 				     UNCHANGED_ICON, GTK_ICON_SIZE_MENU); */
+
+	    snprintf(path_string, 255,"%i",i);
+	    retval=gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(str_store),
+						       &str_iter,
+						       path_string);
+	    gtk_list_store_set(str_store, &str_iter,
+			       STR_STATUS, UNCHANGED_ICON,
+			       -1);
+
 	  }
 
 	  work++;
@@ -755,6 +790,65 @@ commit_pressed( GtkWidget *widget, gpointer data)
 
 }
 
+/* Show brief description on what a clicked variable does. */
+void
+knob_tree_on_row(GtkTreeView        *treeview,
+		 GtkTreePath        *path,
+		 GtkTreeViewColumn  *col,
+		 gpointer            userdata)
+{
+  guint cont_id;
+  int i;
+  char *path_string;
+
+  if(old_context_id!=0) {
+    gtk_statusbar_pop(GTK_STATUSBAR(my_status), old_context_id);
+  }
+
+  cont_id=gtk_statusbar_get_context_id(GTK_STATUSBAR(my_status),
+				       "Info");
+
+  path_string=gtk_tree_path_to_string(path);
+  i=atoi(path_string);
+  g_free(path_string);
+
+  gtk_statusbar_push(GTK_STATUSBAR(my_status),
+		     cont_id,
+		     r_ptr[i].comment);
+
+  old_context_id=cont_id;
+
+}
+
+/* Show brief description on what a clicked variable does. */
+void
+str_tree_on_row(GtkTreeView        *treeview,
+		 GtkTreePath        *path,
+		 GtkTreeViewColumn  *col,
+		 gpointer            userdata)
+{
+  guint cont_id;
+  int i;
+  char *path_string;
+
+  if(old_context_id!=0) {
+    gtk_statusbar_pop(GTK_STATUSBAR(my_status), old_context_id);
+  }
+
+  cont_id=gtk_statusbar_get_context_id(GTK_STATUSBAR(my_status),
+				       "Info");
+
+  path_string=gtk_tree_path_to_string(path);
+  i=atoi(path_string);
+  g_free(path_string);
+
+  gtk_statusbar_push(GTK_STATUSBAR(my_status),
+		     cont_id,
+		     s_ptr[i].comment);
+
+  old_context_id=cont_id;
+
+}
 
 /* If a string is modified by the user, this 
  * function will be called. It finds which widget
@@ -981,17 +1075,6 @@ add_pressed(GtkWidget * widget, gpointer data)
 
     gtk_container_add(GTK_CONTAINER(add_window), add_vbox);
 
-/*     gtk_widget_show(add_frame1); */
-/*     gtk_widget_show(add_entry1); */
-/*     gtk_widget_show(add_frame2); */
-/*     gtk_widget_show(add_entry2); */
-/*     gtk_widget_show(add_frame3); */
-/*     gtk_widget_show(add_entry3); */
-/*     gtk_widget_show(add_yes_button); */
-/*     gtk_widget_show(add_no_button); */
-/*     gtk_widget_show(add_hsep); */
-/*     gtk_widget_show(add_vbox); */
-/*     gtk_widget_show(add_hbutton); */
     gtk_widget_show_all(add_window);
 
   }
@@ -1003,7 +1086,8 @@ add_pressed(GtkWidget * widget, gpointer data)
 void 
 add_yes_pressed(GtkWidget * widget, gpointer data)
 {
-
+  GtkTreeIter knob_iter;
+  GtkTreeIter str_iter;
   GtkWidget *dialog;
   int i,dupe;
   char *new_value;
@@ -1113,47 +1197,14 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
 
       gtk_notebook_set_current_page(GTK_NOTEBOOK(mynotebook),(gint) 0);
 
-/*       radio_yes1[r_num]=gtk_radio_button_new_with_label(NULL, "yes"); */
-/*       group1[r_num]=gtk_radio_button_get_group(GTK_RADIO_BUTTON(radio_yes1[r_num])); */
-/*       radio_no1[r_num]=gtk_radio_button_new_with_label(group1[r_num], "no"); */
-/*       knob_status[r_num]=gtk_image_new_from_stock(CHANGED_ICON, GTK_ICON_SIZE_MENU); */
+      gtk_list_store_append(knob_store, &knob_iter);
+      gtk_list_store_set(knob_store, &knob_iter,
+			 KNOB_STATUS, CHANGED_ICON,
+			 KNOB_NAME, r_ptr[r_num].name,
+			 KNOB_VALUE, r_ptr[r_num].knob_val==KNOB_IS_NO ? FALSE : TRUE,
+			 -1);
 
-/*       if(r_ptr[r_num].knob_val==KNOB_IS_NO) { */
-
-/* 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_no1[r_num]), TRUE); */
-
-/*       } */
-
-/*       g_signal_connect(GTK_OBJECT(radio_yes1[r_num]), "pressed", */
-/* 		       GTK_SIGNAL_FUNC(radio_yes_pressed), NULL); */
-
-/*       g_signal_connect(GTK_OBJECT(radio_no1[r_num]), "pressed", */
-/* 		       GTK_SIGNAL_FUNC(radio_no_pressed), NULL); */
-
-/*       knob_label[r_num]=gtk_label_new(r_ptr[r_num].name); */
-/*       knob_event[r_num]=gtk_event_box_new(); */
-/*       gtk_container_add(GTK_CONTAINER(knob_event[r_num]), knob_label[r_num]); */
-
-/*       knob_tips[r_num]=gtk_tooltips_new(); */
-/*       gtk_tooltips_set_tip(knob_tips[r_num], knob_event[r_num], r_ptr[r_num].comment, ""); */
-/*       gtk_tooltips_enable(knob_tips[r_num]); */
-
-/*       gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_status[r_num]), */
-/* 		       0, 1, r_num, r_num+1, 0, GTK_EXPAND, 0, 0); */
-/*       gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_event[r_num]),  */
-/* 		       1, 2, r_num, r_num+1, 0, GTK_EXPAND, 0, 0); */
-/*       gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(radio_yes1[r_num]),  */
-/* 		       2, 3, r_num, r_num+1, 0, GTK_EXPAND, 0, 0); */
-/*       gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(radio_no1[r_num]),  */
-/* 		       3, 4, r_num, r_num+1, 0, GTK_EXPAND, 0, 0); */
-
-/*       gtk_widget_show(knob_status[r_num]); */
-/*       gtk_widget_show(knob_event[r_num]); */
-/*       gtk_widget_show(knob_label[r_num]); */
-/*       gtk_widget_show(radio_yes1[r_num]); */
-/*       gtk_widget_show(radio_no1[r_num]); */
-
-/*       r_num++; */
+      r_num++;
 
       /* Is a string */
     } else {
@@ -1174,59 +1225,20 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
       /* Switch page */
       gtk_notebook_set_current_page(GTK_NOTEBOOK(mynotebook), (gint) 1);
 
-/*       str_label[s_num]=gtk_label_new(s_ptr[s_num].name); */
-/*       str_event[s_num]=gtk_event_box_new(); */
-/*       gtk_container_add(GTK_CONTAINER(str_event[s_num]), str_label[s_num]); */
-
-/*       str_tips[s_num]=gtk_tooltips_new(); */
-/*       gtk_tooltips_set_tip(str_tips[s_num], str_event[s_num], s_ptr[s_num].comment, ""); */
-/*       gtk_tooltips_enable(str_tips[s_num]); */
-
-/*       str_status[s_num]=gtk_image_new_from_stock(CHANGED_ICON, GTK_ICON_SIZE_MENU); */
-
-/*       str_entry[s_num]=gtk_entry_new(); */
-
-/*       gtk_entry_set_max_length(GTK_ENTRY(str_entry[s_num]), 255); */
-
-/*       gtk_entry_set_text(GTK_ENTRY(str_entry[s_num]), s_ptr[s_num].value); */
-
-/*       g_signal_connect(GTK_OBJECT(str_entry[s_num]), "changed", */
-/* 		       GTK_SIGNAL_FUNC(entry_modified), NULL); */
-
-/*       gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_status[s_num]) */
-/* 		       , 0, 1, s_num, s_num+1, 0, GTK_EXPAND, 0, 0); */
-/*       gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_event[s_num]) */
-/* 		       , 1, 2, s_num, s_num+1, NULL, NULL, 0, 0); */
-/*       gtk_table_attach_defaults(GTK_TABLE(mytable2), GTK_WIDGET(str_entry[s_num]) */
-/* 				, 2, 3, s_num, s_num+1); */
-
-/*       gtk_widget_show(str_status[s_num]); */
-/*       gtk_widget_show(str_entry[s_num]); */
-/*       gtk_widget_show(str_label[s_num]); */
-/*       gtk_widget_show(str_event[s_num]); */
+      gtk_list_store_append(str_store, &str_iter);
+      gtk_list_store_set(str_store, &str_iter,
+			 STR_STATUS, CHANGED_ICON,
+			 STR_NAME, s_ptr[s_num].name,
+			 STR_VALUE, s_ptr[s_num].value,
+			 -1);
 
       s_num++;			
 
     }
 
     /* Close window */
-/*     gtk_widget_hide(add_entry1); */
-/*     gtk_widget_hide(add_entry2); */
-/*     gtk_widget_hide(add_yes_button); */
-/*     gtk_widget_hide(add_no_button); */
-/*     gtk_widget_hide(add_hsep); */
-/*     gtk_widget_hide(add_vbox); */
-/*     gtk_widget_hide(add_hbutton); */
-/*     gtk_widget_hide(add_window); */
-
-/*     gtk_widget_destroy(add_frame1);	 */
-/*     gtk_widget_destroy(add_frame2); */
-/*     gtk_widget_destroy(add_frame3); */
-/*     gtk_widget_destroy(add_yes_button); */
-/*     gtk_widget_destroy(add_no_button); */
-/*     gtk_widget_destroy(add_hsep); */
-/*     gtk_widget_destroy(add_vbox); */
     gtk_widget_destroy(add_window);		
+
   }
 
 }
@@ -1236,25 +1248,7 @@ void
 add_no_pressed(GtkWidget * widget, gpointer data)
 {
 
-/*   gtk_widget_hide(add_entry1); */
-/*   gtk_widget_hide(add_entry2); */
-/*   gtk_widget_hide(add_entry3); */
-/*   gtk_widget_hide(add_yes_button); */
-/*   gtk_widget_hide(add_no_button); */
-/*   gtk_widget_hide(add_hsep); */
-/*   gtk_widget_hide(add_vbox); */
-/*   gtk_widget_hide(add_hbutton); */
-/*   gtk_widget_hide(add_window); */
-
-/*   gtk_widget_destroy(add_frame1);	 */
-/*   gtk_widget_destroy(add_frame2); */
-/*   gtk_widget_destroy(add_frame3); */
-/*   gtk_widget_destroy(add_yes_button); */
-/*   gtk_widget_destroy(add_no_button); */
-/*   gtk_widget_destroy(add_hsep); */
-/*   gtk_widget_destroy(add_vbox); */
   gtk_widget_destroy(add_window);
-
   add_win_up=FALSE;
 
 }
