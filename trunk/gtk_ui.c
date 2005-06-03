@@ -158,7 +158,8 @@ guint old_context_id;
 
 /* This funcion creates the main UI */
 int
-create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
+create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
+	      RC_NODE *rc_strings, int num_str)
 {
 
   GtkWidget *quit_button;
@@ -223,15 +224,15 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   int fd;
   FILE *fp;
 
-  commit_win_up=FALSE;
-  add_win_up=FALSE;
-  about_win_up=FALSE;
-  quit_win_up=FALSE;	
-  r_ptr=rc_knobs;
-  s_ptr=rc_strings;
-  dirty=NOT_DIRTY;
+  commit_win_up = FALSE;
+  add_win_up = FALSE;
+  about_win_up = FALSE;
+  quit_win_up = FALSE;	
+  r_ptr = rc_knobs;
+  s_ptr = rc_strings;
+  dirty = NOT_DIRTY;
 
-  old_context_id=0;
+  old_context_id = 0;
 
   /* Define main window */
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -240,30 +241,31 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   gtk_window_set_title(GTK_WINDOW(window), "The Fish " THE_FISH_VERSION);
 
 
-  /* Set the size.
+  /*
+   * Set the size.
    * We're now using human readable data, handle the migration
    * transparently for the user.
    */
   homedir=getenv("HOME");
 
-  if(homedir!=NULL) {
+  if(homedir != NULL) {
 
     snprintf(temp, FILENAME_MAX, "%s/%s", homedir, ".thefishrc");
     fd=open(temp, O_RDONLY, 0);
 
-    if(fd!=-1) {
+    if(fd != -1) {
 
-      i=lseek(fd, 0, SEEK_END);
+      i = lseek(fd, 0, SEEK_END);
       lseek(fd, 0, SEEK_SET);
 
-      if(i==sizeof(oldsize)) {
+      if(i == sizeof(oldsize)) {
 
 	read(fd, &oldsize[0], sizeof(oldsize));
 	close(fd);
 
       } else {
 
-	fp=fdopen(fd, "r");
+	fp = fdopen(fd, "r");
 	fscanf(fp, "geometry=%i,%i", &oldsize[0], &oldsize[1]);
 	fclose(fp);
 
@@ -271,8 +273,8 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
     } else  {
       /* Set some default values */
-      oldsize[0]=400;
-      oldsize[1]=480;
+      oldsize[0] = 400;
+      oldsize[1] = 480;
 
     }
 
@@ -281,10 +283,10 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   gtk_window_set_default_size(GTK_WINDOW(window), oldsize[0], oldsize[1]);
 
   /* Set the icon */
-  icon16_pixbuf=gdk_pixbuf_new_from_xpm_data((const char **)fish16_xpm);
-  icon32_pixbuf=gdk_pixbuf_new_from_xpm_data((const char **)fish32_xpm);
-  icon48_pixbuf=gdk_pixbuf_new_from_xpm_data((const char **)fish48_xpm);
-  icon64_pixbuf=gdk_pixbuf_new_from_xpm_data((const char **)fish64_xpm);
+  icon16_pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)fish16_xpm);
+  icon32_pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)fish32_xpm);
+  icon48_pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)fish48_xpm);
+  icon64_pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)fish64_xpm);
 
   g_list_append(icon_list, icon16_pixbuf);
   g_list_append(icon_list, icon32_pixbuf);
@@ -294,7 +296,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   gtk_window_set_icon(GTK_WINDOW(window), icon64_pixbuf);
   gtk_window_set_default_icon_list(icon_list);
 
-  g_list_free (icon_list);
+  g_list_free(icon_list);
 
   /* Basic buttons */
   commit_button = gtk_button_new_from_stock(CHANGED_ICON);
@@ -313,26 +315,26 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   add_button = gtk_button_new_from_stock(GTK_STOCK_ADD);
 
   /* Button tooltips */
-  commit_tip=gtk_tooltips_new();
-  gtk_tooltips_set_tip(commit_tip,commit_button,"Save changes","");
+  commit_tip = gtk_tooltips_new();
+  gtk_tooltips_set_tip(commit_tip, commit_button, "Save changes", "");
   gtk_tooltips_enable(commit_tip);
 
   add_tip=gtk_tooltips_new();
-  gtk_tooltips_set_tip(add_tip,add_button,"Add a new entry","");
+  gtk_tooltips_set_tip(add_tip, add_button, "Add a new entry", "");
   gtk_tooltips_enable(add_tip);
 
   about_tip=gtk_tooltips_new();
-  gtk_tooltips_set_tip(about_tip,about_button,"About The Fish","");
+  gtk_tooltips_set_tip(about_tip, about_button, "About The Fish", "");
   gtk_tooltips_enable(about_tip);
 
   quit_tip=gtk_tooltips_new();
-  gtk_tooltips_set_tip(quit_tip,quit_button,"Exit The Fish","");
+  gtk_tooltips_set_tip(quit_tip, quit_button, "Exit The Fish", "");
   gtk_tooltips_enable(quit_tip);
 
   /* Nothing to save yet, so disable the button */
   gtk_widget_set_sensitive(commit_button, FALSE);
 
-  h_buttons=gtk_hbutton_box_new();
+  h_buttons = gtk_hbutton_box_new();
 
   gtk_box_pack_start(GTK_BOX(h_buttons), commit_button, FALSE, FALSE, 0);
   gtk_box_pack_start(GTK_BOX(h_buttons), add_button, FALSE, FALSE, 0);
@@ -341,28 +343,28 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   /* Callback handlers */
   g_signal_connect(GTK_OBJECT(window), "delete_event",
-		   GTK_SIGNAL_FUNC(delete_event), NULL);
+		   G_CALLBACK(delete_event), NULL);
 
   g_signal_connect(GTK_OBJECT(window), "destroy",
-		   GTK_SIGNAL_FUNC(destroy), NULL);
+		   G_CALLBACK(destroy), NULL);
 
   g_signal_connect(GTK_OBJECT(commit_button), "clicked",
-		   GTK_SIGNAL_FUNC(commit_pressed), NULL);
+		   G_CALLBACK(commit_pressed), NULL);
 
   g_signal_connect(GTK_OBJECT(quit_button), "clicked",
-		   GTK_SIGNAL_FUNC(quit_pressed), NULL);
+		   G_CALLBACK(quit_pressed), NULL);
 
   g_signal_connect(GTK_OBJECT(about_button), "clicked",
-		   GTK_SIGNAL_FUNC(about_pressed), NULL);
+		   G_CALLBACK(about_pressed), NULL);
 
   g_signal_connect(GTK_OBJECT(add_button), "clicked",
-		   GTK_SIGNAL_FUNC(add_pressed), NULL);
+		   G_CALLBACK(add_pressed), NULL);
 
 
-  vbox1 = gtk_vbox_new (FALSE, 2);
+  vbox1 = gtk_vbox_new(FALSE, 2);
 
-  r_num=num_knobs;
-  s_num=num_str;
+  r_num = num_knobs;
+  s_num = num_str;
 
 
   knob_store = gtk_list_store_new(KNOB_COLUMNS, 
@@ -370,17 +372,17 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 				  G_TYPE_STRING, 
 				  G_TYPE_BOOLEAN);
 
-  for(i=0;i<num_knobs;i++) {
+  for(i=0; i<num_knobs; i++) {
 
     /* No user comments yet */
-    (rc_knobs+i)->user_comment=0;
+    (rc_knobs+i)->user_comment = 0;
 
     gtk_list_store_append(knob_store, &knob_iter);
     gtk_list_store_set(knob_store, &knob_iter,
 		       KNOB_STATUS, UNCHANGED_ICON,
 		       KNOB_NAME, (rc_knobs+i)->name,
-		       KNOB_VALUE, (rc_knobs+i)->knob_val==KNOB_IS_NO ? FALSE : TRUE,
-			-1);
+		       KNOB_VALUE, (rc_knobs+i)->knob_val == KNOB_IS_NO ? FALSE : TRUE,
+		       -1);
 
   }
 
@@ -428,22 +430,22 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   hseparator1 = gtk_hseparator_new();
 
-  /* New code added on Jan 25 2003
+  /*
    * We use a scrolled window for both the knobs 
    * and the strings
    */
-  scrolled_window1=gtk_scrolled_window_new(NULL, NULL);
+  scrolled_window1 = gtk_scrolled_window_new(NULL, NULL);
   gtk_container_set_border_width(GTK_CONTAINER(scrolled_window1), 10);
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window1),
 				 GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
   gtk_container_add(GTK_CONTAINER(scrolled_window1), knob_tree);
   gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 
-  tab_bools=gtk_label_new("Knobs");
-  tab_str=gtk_label_new("Strings");
+  tab_bools = gtk_label_new("Knobs");
+  tab_str = gtk_label_new("Strings");
 
-  mynotebook=gtk_notebook_new();
-  my_status=gtk_statusbar_new();
+  mynotebook = gtk_notebook_new();
+  my_status = gtk_statusbar_new();
 
   gtk_notebook_append_page(GTK_NOTEBOOK(mynotebook), scrolled_window1, tab_bools);
 
@@ -464,10 +466,10 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 				 G_TYPE_STRING, 
 				 G_TYPE_STRING);
 
-  for(i=0;i<num_str;i++) {
+  for(i=0; i<num_str; i++) {
 
     /* No user comments yet */
-    (rc_strings+i)->user_comment=0;
+    (rc_strings+i)->user_comment = 0;
 
     gtk_list_store_append(str_store, &str_iter);
     gtk_list_store_set(str_store, &str_iter,
@@ -525,7 +527,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   hseparator2 = gtk_hseparator_new();
 
-  scrolled_window2=gtk_scrolled_window_new(NULL, NULL);
+  scrolled_window2 = gtk_scrolled_window_new(NULL, NULL);
   gtk_container_set_border_width(GTK_CONTAINER(scrolled_window2), 10);
   gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW(scrolled_window2),
 				  GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
@@ -537,7 +539,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   gtk_widget_show_all(window);
 
   /* Let the show begin */
-  gtk_main ();
+  gtk_main();
 
   return 0;
 }
@@ -545,19 +547,19 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 /* CALLBACKS */
 
 gint 
-delete_event( GtkWidget *widget, GdkEvent *event, gpointer data)
+delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
   GtkWidget *dialog;
   gint result;
 
-  if(dirty>0) {
+  if(dirty > 0) {
 
-    dialog = gtk_message_dialog_new (GTK_WINDOW(window),
-				     GTK_DIALOG_DESTROY_WITH_PARENT,
-				     GTK_MESSAGE_QUESTION,
-				     GTK_BUTTONS_YES_NO,
-				     "There are unsaved changes, quit anyway?");
-    result=gtk_dialog_run (GTK_DIALOG(dialog));
+    dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				    GTK_DIALOG_DESTROY_WITH_PARENT,
+				    GTK_MESSAGE_QUESTION,
+				    GTK_BUTTONS_YES_NO,
+				    "There are unsaved changes, quit anyway?");
+    result = gtk_dialog_run (GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
 
   } else {
@@ -566,7 +568,7 @@ delete_event( GtkWidget *widget, GdkEvent *event, gpointer data)
 
   }
 
-  if(result==GTK_RESPONSE_YES) {
+  if(result == GTK_RESPONSE_YES) {
 
     return FALSE;
 
@@ -579,7 +581,7 @@ delete_event( GtkWidget *widget, GdkEvent *event, gpointer data)
 }
 
 void 
-destroy( GtkWidget *widget, gpointer data)
+destroy(GtkWidget *widget, gpointer data)
 {
   save_geometry();
   gtk_main_quit();
@@ -587,24 +589,24 @@ destroy( GtkWidget *widget, gpointer data)
 
 /* Warn the user if she has unsaved changes */
 void 
-quit_pressed( GtkWidget *widget, gpointer data)
+quit_pressed(GtkWidget *widget, gpointer data)
 {
 
   GtkWidget *dialog;
   gint result;
 
 
-  if(dirty>0) {
+  if(dirty > 0) {
 
     dialog = gtk_message_dialog_new (GTK_WINDOW(window),
 				     GTK_DIALOG_DESTROY_WITH_PARENT,
 				     GTK_MESSAGE_QUESTION,
 				     GTK_BUTTONS_YES_NO,
 				     "There are unsaved changes, quit anyway?");
-    result=gtk_dialog_run (GTK_DIALOG(dialog));
+    result = gtk_dialog_run (GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
 
-    if(result==GTK_RESPONSE_YES) {
+    if(result == GTK_RESPONSE_YES) {
 
       save_geometry();
       gtk_main_quit();
@@ -620,11 +622,12 @@ quit_pressed( GtkWidget *widget, gpointer data)
 
 }
 
-/* This function saves changes to $FISH_RC or 
+/*
+ * This function saves changes to $FISH_RC or 
  * /etc/rc.conf
  */
 void 
-commit_pressed( GtkWidget *widget, gpointer data)
+commit_pressed(GtkWidget *widget, gpointer data)
 {
 
   GtkWidget *dialog; /* for the GTK2 dialogs */
@@ -641,44 +644,45 @@ commit_pressed( GtkWidget *widget, gpointer data)
   char path_string[255];
   time_t comm_time;
 
-  not_committed=0;
+  not_committed = 0;
 
-  if(commit_win_up==FALSE) {
+  if(commit_win_up == FALSE) {
 
-    if(dirty>0) {
+    if(dirty > 0) {
 
-      work=r_ptr;
+      work = r_ptr;
 
-      rc_file=getenv("FISH_RC");
-      if(rc_file!=NULL) {
+      rc_file = getenv("FISH_RC");
 
-	fd=fopen(rc_file, "a");
+      if(rc_file != NULL) {
+
+	fd = fopen(rc_file, "a");
 
       } else { 
 
-	fd=fopen(RC_FILE, "a");
+	fd = fopen(RC_FILE, "a");
 
       }
 
-      if(fd==NULL) {
+      if(fd == NULL) {
 
-	not_committed=1;			
+	not_committed = 1;			
 
       }
 
-      if(not_committed==0) {
+      if(not_committed == 0) {
 
-	comm_time=time(NULL);
-	ctime_r(&comm_time,time_buf);
-	snprintf(fish_header,255,"\n#The Fish generated deltas - %s",time_buf);
+	comm_time = time(NULL);
+	ctime_r(&comm_time, time_buf);
+	snprintf(fish_header, 255, "\n# The Fish generated deltas - %s", time_buf);
 	fprintf(fd,fish_header);
 
 	/* modified knobs */
-	for(i=0;i<=r_num;i++) {
+	for(i=0; i<=r_num; i++) {
 
-	  if(work->modified==MODIFIED_YES) {
+	  if(work->modified == MODIFIED_YES) {
 
-	    if(work->user_comment==0) {
+	    if(work->user_comment == 0) {
 
 	      fprintf(fd,"%s=%s\n", work->name,
 		      work->knob_val == KNOB_IS_YES ? KNOB_YES : KNOB_NO);
@@ -691,10 +695,10 @@ commit_pressed( GtkWidget *widget, gpointer data)
 
 	    }
 
-	    work->user_comment=0;
-	    work->user_added=USER_ADDED_NO;
-	    work->modified=MODIFIED_NO;
-	    work->knob_orig=work->knob_val;
+	    work->user_comment = 0;
+	    work->user_added = USER_ADDED_NO;
+	    work->modified = MODIFIED_NO;
+	    work->knob_orig = work->knob_val;
 
 	    /* Hackish, but it works */
 	    snprintf(path_string, 255,"%i",i);
@@ -713,12 +717,12 @@ commit_pressed( GtkWidget *widget, gpointer data)
 	} 
 
 	/* modified strings */
-	work=s_ptr;
-	for(i=0;i<=s_num;i++) {
+	work = s_ptr;
+	for(i=0; i<=s_num; i++) {
 
-	  if(work->modified==MODIFIED_YES) {
+	  if(work->modified == MODIFIED_YES) {
 
-	    if(work->user_comment==0) {
+	    if(work->user_comment == 0) {
 
 	      fprintf(fd,"%s=%s\n", work->name, work->value);
 
@@ -729,9 +733,9 @@ commit_pressed( GtkWidget *widget, gpointer data)
 
 	    }
 
-	    work->user_comment=0;
-	    work->modified=MODIFIED_NO;
-	    work->user_added=USER_ADDED_NO;
+	    work->user_comment = 0;
+	    work->modified = MODIFIED_NO;
+	    work->user_added = USER_ADDED_NO;
 	    strncpy(work->orig, work->value, 255);
 
 	    snprintf(path_string, 255,"%i",i);
@@ -753,42 +757,42 @@ commit_pressed( GtkWidget *widget, gpointer data)
       }
 
       /* Pop up window */
-      if(not_committed==1) {
+      if(not_committed == 1) {
 
-	dialog = gtk_message_dialog_new (GTK_WINDOW(window),
-					 GTK_DIALOG_DESTROY_WITH_PARENT,
-					 GTK_MESSAGE_ERROR,
-					 GTK_BUTTONS_CLOSE,
-					 "Can't open '%s' for writing. Changes not saved",
-					 rc_file!=NULL ? rc_file : RC_FILE);
+	dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+					GTK_DIALOG_DESTROY_WITH_PARENT,
+					GTK_MESSAGE_ERROR,
+					GTK_BUTTONS_CLOSE,
+					"Can't open '%s' for writing. Changes not saved",
+					rc_file != NULL ? rc_file : RC_FILE);
       } else {
 
-	dialog = gtk_message_dialog_new (GTK_WINDOW(window),
-					 GTK_DIALOG_DESTROY_WITH_PARENT,
-					 GTK_MESSAGE_INFO,
-					 GTK_BUTTONS_OK,
-					 "Changes saved");
+	dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+					GTK_DIALOG_DESTROY_WITH_PARENT,
+					GTK_MESSAGE_INFO,
+					GTK_BUTTONS_OK,
+					"Changes saved");
       }
 
-      gtk_dialog_run (GTK_DIALOG(dialog));
+      gtk_dialog_run(GTK_DIALOG(dialog));
       gtk_widget_destroy(dialog);
 
     } else {
 
-      dialog = gtk_message_dialog_new (GTK_WINDOW(window),
-				       GTK_DIALOG_DESTROY_WITH_PARENT,
-				       GTK_MESSAGE_INFO,
-				       GTK_BUTTONS_OK,
-				       "There are no unsaved changes");
+      dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				      GTK_DIALOG_DESTROY_WITH_PARENT,
+				      GTK_MESSAGE_INFO,
+				      GTK_BUTTONS_OK,
+				      "There are no unsaved changes");
 
-      gtk_dialog_run (GTK_DIALOG(dialog));
+      gtk_dialog_run(GTK_DIALOG(dialog));
       gtk_widget_destroy(dialog);
 
     }
 
-    if(not_committed==0) {
+    if(not_committed == 0) {
 
-      dirty=NOT_DIRTY;
+      dirty = NOT_DIRTY;
       gtk_widget_set_sensitive(commit_button, FALSE);
 
     }
@@ -808,12 +812,14 @@ knob_tree_on_row(GtkTreeSelection *treeselection,
   GtkTreeModel *model;
   GtkTreeIter iter;
 
-  if(old_context_id!=0) {
+  if(old_context_id != 0) {
+
     gtk_statusbar_pop(GTK_STATUSBAR(my_status), old_context_id);
+
   }
 
-  cont_id=gtk_statusbar_get_context_id(GTK_STATUSBAR(my_status),
-				       "Info");
+  cont_id = gtk_statusbar_get_context_id(GTK_STATUSBAR(my_status),
+					 "Info");
 
   gtk_tree_selection_get_selected(treeselection, &model, &iter);
   path_string = gtk_tree_model_get_string_from_iter(model, &iter);
@@ -824,7 +830,7 @@ knob_tree_on_row(GtkTreeSelection *treeselection,
 		     cont_id,
 		     r_ptr[i].comment);
 
-  old_context_id=cont_id;
+  old_context_id = cont_id;
 
 }
 
@@ -840,12 +846,14 @@ str_tree_on_row(GtkTreeSelection *treeselection,
   GtkTreeModel *model;
   GtkTreeIter iter;
 
-  if(old_context_id!=0) {
+  if(old_context_id != 0) {
+
     gtk_statusbar_pop(GTK_STATUSBAR(my_status), old_context_id);
+
   }
 
-  cont_id=gtk_statusbar_get_context_id(GTK_STATUSBAR(my_status),
-				       "Info");
+  cont_id = gtk_statusbar_get_context_id(GTK_STATUSBAR(my_status),
+					 "Info");
 
   gtk_tree_selection_get_selected(treeselection, &model, &iter);
   path_string = gtk_tree_model_get_string_from_iter(model, &iter);
@@ -856,11 +864,12 @@ str_tree_on_row(GtkTreeSelection *treeselection,
 		     cont_id,
 		     s_ptr[i].comment);
 
-  old_context_id=cont_id;
+  old_context_id = cont_id;
 
 }
 
-/* If a string is modified by the user, this 
+/*
+ * If a string is modified by the user, this 
  * function will be called. It finds which widget
  * has been modified and syncs the new entry value
  * with the value stored in the RC_NODE structure.
@@ -874,9 +883,9 @@ str_edited_callback(GtkCellRendererText *cell,
   int retval, i;
   GtkTreeIter str_iter;
 
-  retval=gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(str_store),
-                                             &str_iter,
-                                             path_string);
+  retval = gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(str_store),
+					       &str_iter,
+					       path_string);
 
   gtk_list_store_set(str_store, &str_iter,
 		     STR_VALUE, new_text,
@@ -886,21 +895,22 @@ str_edited_callback(GtkCellRendererText *cell,
   printf("You've modified: %s -> %s\n",s_ptr[i].name, new_text);
 #endif
 
-  i=atoi(path_string);
+  i = atoi(path_string);
 
   strncpy(s_ptr[i].value, new_text, 255);
-  if(!strncmp(s_ptr[i].value, s_ptr[i].orig, 255) && s_ptr[i].user_added==USER_ADDED_NO) {
 
-    s_ptr[i].modified=MODIFIED_NO;
-    if(dirty>0) dirty--;
-    if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
+  if(!strncmp(s_ptr[i].value, s_ptr[i].orig, 255) && s_ptr[i].user_added == USER_ADDED_NO) {
+
+    s_ptr[i].modified = MODIFIED_NO;
+    if(dirty > 0) dirty--;
+    if(dirty == NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
     gtk_list_store_set(str_store, &str_iter,
 		       STR_STATUS, UNCHANGED_ICON,
 		       -1);
 
   } else {
 
-    s_ptr[i].modified=MODIFIED_YES;
+    s_ptr[i].modified = MODIFIED_YES;
     dirty++;
     gtk_widget_set_sensitive(commit_button, TRUE);
     gtk_list_store_set(str_store, &str_iter,
@@ -919,49 +929,49 @@ knob_toggled_callback(GtkCellRendererToggle *cell,
 		      gpointer               user_data)
 {
   GtkTreeIter knob_iter;
-  GValue my_value= {0, };
+  GValue my_value = {0, };
   gboolean retval;
   int i;
 
-  retval=gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(knob_store),
-                                             &knob_iter,
-                                             path_string);
+  retval = gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(knob_store),
+					       &knob_iter,
+					       path_string);
 
   gtk_tree_model_get_value(GTK_TREE_MODEL(knob_store),
  			   &knob_iter, 
  			   KNOB_VALUE,
  			   &my_value);
 
-  retval=g_value_get_boolean(&my_value);
+  retval = g_value_get_boolean(&my_value);
 
 #ifdef VERBOSE_CONSOLE
   printf("You've toggled: %s -> %i\n", path_string, retval);
 #endif
 
-  i=atoi(path_string);
+  i = atoi(path_string);
 
-  if(retval==TRUE) {
+  if(retval == TRUE) {
 
     gtk_list_store_set(knob_store, &knob_iter,
 		       KNOB_VALUE, FALSE,
 		       -1);
     
-    r_ptr[i].knob_val=KNOB_IS_NO;
+    r_ptr[i].knob_val = KNOB_IS_NO;
 
-    if(r_ptr[i].knob_orig==KNOB_IS_YES) {
+    if(r_ptr[i].knob_orig == KNOB_IS_YES) {
 
-      r_ptr[i].modified=MODIFIED_YES;
+      r_ptr[i].modified = MODIFIED_YES;
       dirty++;
       gtk_widget_set_sensitive(commit_button, TRUE);
       gtk_list_store_set(knob_store, &knob_iter,
 			 KNOB_STATUS, CHANGED_ICON,
 			 -1);
 
-    } else if(r_ptr[i].user_added==USER_ADDED_NO) {
+    } else if(r_ptr[i].user_added == USER_ADDED_NO) {
 
-      r_ptr[i].modified=MODIFIED_NO;
-      if(dirty>0) dirty--;
-      if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
+      r_ptr[i].modified = MODIFIED_NO;
+      if(dirty > 0) dirty--;
+      if(dirty == NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
       gtk_list_store_set(knob_store, &knob_iter,
 			 KNOB_STATUS, UNCHANGED_ICON,
 			 -1);
@@ -974,22 +984,22 @@ knob_toggled_callback(GtkCellRendererToggle *cell,
 		       KNOB_VALUE, TRUE,
 		       -1);
 
-    r_ptr[i].knob_val=KNOB_IS_YES;
+    r_ptr[i].knob_val = KNOB_IS_YES;
 
-    if(r_ptr[i].knob_orig==KNOB_IS_NO) {
+    if(r_ptr[i].knob_orig == KNOB_IS_NO) {
 
-      r_ptr[i].modified=MODIFIED_YES;
+      r_ptr[i].modified = MODIFIED_YES;
       dirty++;
       gtk_widget_set_sensitive(commit_button, TRUE);
       gtk_list_store_set(knob_store, &knob_iter,
 			 KNOB_STATUS, CHANGED_ICON,
 			 -1);
 
-    } else if(r_ptr[i].user_added==USER_ADDED_NO) {
+    } else if(r_ptr[i].user_added == USER_ADDED_NO) {
 
-      r_ptr[i].modified=MODIFIED_NO;
-      if(dirty>0) dirty--;
-      if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
+      r_ptr[i].modified = MODIFIED_NO;
+      if(dirty > 0) dirty--;
+      if(dirty == NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
       gtk_list_store_set(knob_store, &knob_iter,
 			 KNOB_STATUS, UNCHANGED_ICON,
 			 -1);
@@ -1025,16 +1035,17 @@ about_pressed(GtkWidget *widget, gpointer data)
 
 }
 
-/* The user has pressed the add button. This
+/*
+ * The user has pressed the add button. This
  * function creates the 'add entry' window,
  * with Name, Value and Comment entries 
  */
 void 
 add_pressed(GtkWidget * widget, gpointer data)
 {
-  if(add_win_up==FALSE) {
+  if(add_win_up == FALSE) {
 
-    add_win_up=TRUE;
+    add_win_up = TRUE;
 
     add_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_position (GTK_WINDOW (add_window), GTK_WIN_POS_CENTER);
@@ -1044,32 +1055,32 @@ add_pressed(GtkWidget * widget, gpointer data)
     add_yes_button = gtk_button_new_from_stock(GTK_STOCK_APPLY);
 
     g_signal_connect(GTK_OBJECT(add_yes_button), "clicked",
-		     GTK_SIGNAL_FUNC(add_yes_pressed), NULL);
+		     G_CALLBACK(add_yes_pressed), NULL);
 
     add_no_button = gtk_button_new_from_stock(GTK_STOCK_CANCEL);
 
     g_signal_connect(GTK_OBJECT(add_no_button), "clicked",
-		     GTK_SIGNAL_FUNC(add_no_pressed), NULL);
+		     G_CALLBACK(add_no_pressed), NULL);
 
     add_hsep = gtk_hseparator_new();
     add_vbox = gtk_vbox_new (FALSE, 0);
 
-    add_hbutton=gtk_hbutton_box_new();
+    add_hbutton = gtk_hbutton_box_new();
 
     gtk_box_pack_start(GTK_BOX(add_hbutton), add_yes_button, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(add_hbutton), add_no_button, FALSE, FALSE, 0);
 
-    add_frame1=gtk_frame_new("Name");
-    add_entry1=gtk_entry_new();
+    add_frame1 = gtk_frame_new("Name");
+    add_entry1 = gtk_entry_new();
     gtk_entry_set_max_length(GTK_ENTRY(add_entry1), 255);
 
-    add_frame2=gtk_frame_new("Value");
-    add_entry2=gtk_entry_new();
+    add_frame2 = gtk_frame_new("Value");
+    add_entry2 = gtk_entry_new();
     gtk_entry_set_max_length(GTK_ENTRY(add_entry2), 255);
     gtk_entry_set_text(GTK_ENTRY(add_entry2), "\"\"");
 
-    add_frame3=gtk_frame_new("Optional Comment");
-    add_entry3=gtk_entry_new();
+    add_frame3 = gtk_frame_new("Optional Comment");
+    add_entry3 = gtk_entry_new();
     gtk_entry_set_max_length(GTK_ENTRY(add_entry3), 255);
 
     add_hsep = gtk_hseparator_new();
@@ -1092,7 +1103,8 @@ add_pressed(GtkWidget * widget, gpointer data)
   }
 }
 
-/* User wants to add, we need to get the new values
+/*
+ * User wants to add, we need to get the new values
  * and do some sanity checks.
  */
 void 
@@ -1106,48 +1118,48 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
   char *new_name;
   char *new_comment;
 
-  add_win_up=FALSE;
-  dupe=0;
-  new_name=(char *) gtk_entry_get_text(GTK_ENTRY(add_entry1));
-  new_value=(char *) gtk_entry_get_text(GTK_ENTRY(add_entry2));
-  new_comment=(char *) gtk_entry_get_text(GTK_ENTRY(add_entry3));
+  add_win_up = FALSE;
+  dupe = 0;
+  new_name = (char *) gtk_entry_get_text(GTK_ENTRY(add_entry1));
+  new_value = (char *) gtk_entry_get_text(GTK_ENTRY(add_entry2));
+  new_comment = (char *) gtk_entry_get_text(GTK_ENTRY(add_entry3));
 
   /* Check for duplicate entries */
-  for(i=0;i<r_num;i++) {
+  for(i=0; i<r_num; i++) {
 
     if(!strncmp(r_ptr[i].name, new_name, 255)) {
 
-      dupe=1;
+      dupe = 1;
       break;
 
     }
 
   }
 
-  for(i=0;i<s_num;i++) {
+  for(i=0; i<s_num; i++) {
 
     if(!strncmp(s_ptr[i].name, new_name, 255)) {
 
-      dupe=1;
+      dupe = 1;
       break;
 
     }
 
   }
 
-  if(strlen(new_name)==0 || strlen(new_value)==0) {
+  if(strlen(new_name) == 0 || strlen(new_value) == 0) {
 
     /* Show warning dialog */
-    dialog = gtk_message_dialog_new (GTK_WINDOW(window),
-				     GTK_DIALOG_DESTROY_WITH_PARENT,
-				     GTK_MESSAGE_ERROR,
-				     GTK_BUTTONS_CLOSE,
-				     "name and value cannot be empty");
+    dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				    GTK_DIALOG_DESTROY_WITH_PARENT,
+				    GTK_MESSAGE_ERROR,
+				    GTK_BUTTONS_CLOSE,
+				    "name and value cannot be empty");
 
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy (dialog);
 
-  } else if(new_value[0]!='"'||new_value[strlen(new_value)-1]!='"') {
+  } else if(new_value[0] != '"' || new_value[strlen(new_value)-1] != '"') {
 
     /* Show warning dialog */
     dialog = gtk_message_dialog_new(GTK_WINDOW(window),
@@ -1158,7 +1170,7 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
 
-  } else if(dupe==1) {
+  } else if(dupe == 1) {
 
 #ifdef VERBOSE_CONSOLE	
     printf("Duplicated entry\n");
@@ -1185,23 +1197,23 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
 
       strncpy(r_ptr[r_num].name, new_name, 255);
       strncpy(r_ptr[r_num].comment, new_comment, 255);
-      r_ptr[r_num].user_added=USER_ADDED_YES;
+      r_ptr[r_num].user_added = USER_ADDED_YES;
 
-      if(strlen(new_comment)>0) r_ptr[r_num].user_comment=1;
+      if(strlen(new_comment) > 0) r_ptr[r_num].user_comment = 1;
 
       if(!strncasecmp(new_value, KNOB_YES, 255)) {
 
-	r_ptr[r_num].knob_val=KNOB_IS_YES;
-	r_ptr[r_num].knob_orig=KNOB_IS_YES;
-	r_ptr[r_num].modified=MODIFIED_YES;
+	r_ptr[r_num].knob_val = KNOB_IS_YES;
+	r_ptr[r_num].knob_orig = KNOB_IS_YES;
+	r_ptr[r_num].modified = MODIFIED_YES;
 	dirty++;
 	gtk_widget_set_sensitive(commit_button, TRUE);
 
       } else {
 
-	r_ptr[r_num].knob_val=KNOB_IS_NO;
-	r_ptr[r_num].knob_orig=KNOB_IS_NO;
-	r_ptr[r_num].modified=MODIFIED_YES;
+	r_ptr[r_num].knob_val = KNOB_IS_NO;
+	r_ptr[r_num].knob_orig = KNOB_IS_NO;
+	r_ptr[r_num].modified = MODIFIED_YES;
 	dirty++;
 	gtk_widget_set_sensitive(commit_button,TRUE);
 
@@ -1225,11 +1237,11 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
       strncpy(s_ptr[s_num].value, new_value, 255);
       strncpy(s_ptr[s_num].orig, new_value, 255);
       strncpy(s_ptr[s_num].comment, new_comment, 255);
-      s_ptr[s_num].user_added=USER_ADDED_YES;
+      s_ptr[s_num].user_added = USER_ADDED_YES;
 
-      if(strlen(new_comment)>0) s_ptr[s_num].user_comment=1;
+      if(strlen(new_comment) > 0) s_ptr[s_num].user_comment = 1;
 
-      s_ptr[s_num].modified=MODIFIED_YES;
+      s_ptr[s_num].modified = MODIFIED_YES;
       dirty++;
 
       gtk_widget_set_sensitive(commit_button, TRUE);
@@ -1261,11 +1273,12 @@ add_no_pressed(GtkWidget * widget, gpointer data)
 {
 
   gtk_widget_destroy(add_window);
-  add_win_up=FALSE;
+  add_win_up = FALSE;
 
 }
 
-/* This routine checks if the user has resized
+/*
+ * This routine checks if the user has resized
  * the window and stores the new geometry values
  * in $HOME/.thefishrc
  */
@@ -1281,13 +1294,13 @@ save_geometry(void)
 
   gtk_window_get_size(GTK_WINDOW(window), &newsize[0], &newsize[1]);
 
-  if(oldsize[0]!=newsize[0] || oldsize[1]!=newsize[1]) {
+  if(oldsize[0] != newsize[0] || oldsize[1] != newsize[1]) {
 
-    homedir=getenv("HOME");
-    if(homedir==NULL) return;
+    homedir = getenv("HOME");
+    if(homedir == NULL) return;
     snprintf(temp, FILENAME_MAX, "%s/%s", homedir, ".thefishrc");
     fd=open(temp, O_WRONLY|O_CREAT|O_TRUNC, 0666);
-    if(fd==-1) return;
+    if(fd == -1) return;
     fp=fdopen(fd, "a");
     fprintf(fp, "geometry=%i,%i\n", newsize[0], newsize[1]);
     fclose(fp);
