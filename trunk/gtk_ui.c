@@ -1005,7 +1005,7 @@ about_pressed(GtkWidget *widget, gpointer data)
 
   const gchar *license =
     "Copyright (c) 2002-2005, Miguel Mendez. All rights reserved.\n"
-    ""
+    "\n"
     "Redistribution and use in source and binary forms, with or without\n"
     "modification, are permitted provided that the following conditions are met:\n"
     "\n"
