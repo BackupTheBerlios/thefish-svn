@@ -25,6 +25,6 @@
 
 */
 
-#define THE_FISH_VERSION "0.5.2 \"Wuthering Heights\"."
+#define THE_FISH_VERSION "0.6 \"Wuthering Heights\"."
 #define RC_DEFAULTS_FILE "/etc/defaults/rc.conf"
 #define RC_FILE "/etc/rc.conf"
