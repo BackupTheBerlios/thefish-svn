@@ -1,0 +1,6 @@
+env = Environment()
+ParseConfig(env,"pkg-config gtk+-2.0 --cflags --libs")
+env['LIBS'] += [ 'dialog' , 'ncurses' ]
+env.CFile(target = 'lex.yy.c', source = 'rc_conf.l')
+env.Program('thefish', Split('gtk_ui.c lex.yy.c main.c ncurses_ui.c parser_ng.c'))
+Default('thefish')

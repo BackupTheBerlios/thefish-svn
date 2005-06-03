@@ -1,0 +1,107 @@
+.Dd Jun, 17 2003
+.Os 
+.Dt "The Fish" 1 CON
+.Sh NAME
+.Nm thefish
+.Nd user friendly rc.conf editor/management tool
+.Sh SYNOPSIS
+.Nm
+.Op Fl cvh
+.Sh DESCRIPTION
+The Fish provides a graphical tool 
+.Po based on GTK+ and ncurses
+.Pc 
+to manage and edit system variables stored in 
+.Pa /etc/defaults/rc.conf
+and
+.Pa /etc/rc.conf
+.Pp
+For testing purposes, or, for users that need to have different configurations, the program honours two 
+environment variables: FISH_RC_DEFAULTS and FISH_RC. Note that, although this program was created to
+edit rc.conf, it can edit similarly structured files, like 
+.Pa /boot/loader.conf. 
+This is a side effect of the way
+the parser was designed and, even if it works, it's totally unsupported.
+.Pp
+The following options can be used:
+.Pp
+.Fl c
+Force console mode
+.br
+.Fl v
+Show version and exit
+.br
+.Fl h
+Show help
+.br
+.Sh Modifying Values
+There are two kinds of entries in rc.conf: Knobs and Strings.
+Knobs can only be either YES or NO. Strings can have any value. To modify a 
+Knob simply click on any of the two radio buttons associated with it. To modify a string, edit the value to your needs. The status of each entry is noted by small icon. A minus sign denotes that entry
+hasn't been modified. A floppy disk icon means that entry was modified or is new and, therefore, 
+needs to be saved.
+.Sh Adding new entries  
+To add a new entry, simply press the 
+.Do
+Add
+.Dc button and fill in the form. 
+.Do
+Name
+.Dc can be any name that is not already 
+in use. 
+.Do
+Value
+.Dc can be 
+.Qo
+YES
+.Qc
+, 
+.Qo
+NO
+.Qc , or something else. Note that 
+.Do
+Value
+.Dc must go between quotes, or you will get an error.
+.Do
+Comment
+.Dc is an optional comment, and it will be appended to the new entry when saving the data. Depending on what value you enter, the new entry will appear at the end of the Knob list, or the String list. Changes won't be saved until you press 
+.Do
+Save
+.Dc .
+.Sh Saving changes
+To permanently save your changes, you need to have write access to 
+.Pa /etc/rc.conf
+.Po
+or FISH_RC 
+.Pc and press
+.Do
+Save
+.Dc . Once you do so, the modifications and new entries will be stored in a delta fashion.
+.Sh ENVIRONMENT
+By default, The Fish reads 
+.Pa /etc/defaults/rc.conf
+and 
+.Pa /etc/rc.conf
+.br
+You can change this behaviour by setting two
+environment variables:
+.Bl -tag -width ".Ev FISH_RC_DEFAULTS"
+.It Ev FISH_RC_DEFAULTS
+user selected defaults file
+.El
+.Bl -tag -width ".Ev FISH_RC_DEFAULTS"
+.It Ev FISH_RC
+user selected personal settings file
+.El
+.Sh FILES
+/etc/defaults/rc.conf
+.br
+/etc/rc.conf
+.Sh SEE ALSO
+.Xr rc.conf 5
+.Sh HISTORY
+The Fish started as a little project in January 2002, based on an idea posted by Terry Lambert on the freebsd-hackers mailing list.
+.Sh AUTHORS
+.An "Miguel Mendez" Aq flynn@energyhq.es.eu.org
+.Sh BUGS
+If you find any, report them.
