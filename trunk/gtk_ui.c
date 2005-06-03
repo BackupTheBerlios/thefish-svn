@@ -138,8 +138,7 @@ static guint old_context_id;
 
 /* This funcion creates the main UI */
 int
-create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
-	      RC_NODE *rc_strings, int num_str)
+create_gtk_ui(RC_CONF *my_rc)
 {
 
   GtkWidget *quit_button;
@@ -208,8 +207,10 @@ create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
   add_win_up = FALSE;
   about_win_up = FALSE;
   quit_win_up = FALSE;	
-  r_ptr = rc_knobs;
-  s_ptr = rc_strings;
+
+  r_ptr = my_rc->knobs_ptr;
+  s_ptr = my_rc->string_ptr;
+
   dirty = NOT_DIRTY;
 
   old_context_id = 0;
@@ -226,19 +227,19 @@ create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
    * We're now using human readable data, handle the migration
    * transparently for the user.
    */
-  homedir=getenv("HOME");
+  homedir = getenv("HOME");
 
-  if(homedir != NULL) {
+  if (homedir != NULL) {
 
     snprintf(temp, FILENAME_MAX, "%s/%s", homedir, ".thefishrc");
-    fd=open(temp, O_RDONLY, 0);
+    fd = open(temp, O_RDONLY, 0);
 
-    if(fd != -1) {
+    if (fd != -1) {
 
       i = lseek(fd, 0, SEEK_END);
       lseek(fd, 0, SEEK_SET);
 
-      if(i == sizeof(oldsize)) {
+      if (i == sizeof(oldsize)) {
 
 	read(fd, &oldsize[0], sizeof(oldsize));
 	close(fd);
@@ -299,15 +300,15 @@ create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
   gtk_tooltips_set_tip(commit_tip, commit_button, "Save changes", "");
   gtk_tooltips_enable(commit_tip);
 
-  add_tip=gtk_tooltips_new();
+  add_tip = gtk_tooltips_new();
   gtk_tooltips_set_tip(add_tip, add_button, "Add a new entry", "");
   gtk_tooltips_enable(add_tip);
 
-  about_tip=gtk_tooltips_new();
+  about_tip = gtk_tooltips_new();
   gtk_tooltips_set_tip(about_tip, about_button, "About The Fish", "");
   gtk_tooltips_enable(about_tip);
 
-  quit_tip=gtk_tooltips_new();
+  quit_tip = gtk_tooltips_new();
   gtk_tooltips_set_tip(quit_tip, quit_button, "Exit The Fish", "");
   gtk_tooltips_enable(quit_tip);
 
@@ -343,8 +344,8 @@ create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
 
   vbox1 = gtk_vbox_new(FALSE, 2);
 
-  r_num = num_knobs;
-  s_num = num_str;
+  r_num = my_rc->knobs_size;
+  s_num = my_rc->string_size;
 
 
   knob_store = gtk_list_store_new(KNOB_COLUMNS, 
@@ -352,16 +353,16 @@ create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
 				  G_TYPE_STRING, 
 				  G_TYPE_BOOLEAN);
 
-  for(i=0; i<num_knobs; i++) {
+  for (i = 0; i < my_rc->knobs_size; i++) {
 
     /* No user comments yet */
-    (rc_knobs+i)->user_comment = 0;
+    (my_rc->knobs_ptr+i)->user_comment = 0;
 
     gtk_list_store_append(knob_store, &knob_iter);
     gtk_list_store_set(knob_store, &knob_iter,
 		       KNOB_STATUS, UNCHANGED_ICON,
-		       KNOB_NAME, (rc_knobs+i)->name,
-		       KNOB_VALUE, (rc_knobs+i)->knob_val == KNOB_IS_NO ? FALSE : TRUE,
+		       KNOB_NAME, (my_rc->knobs_ptr+i)->name,
+		       KNOB_VALUE, (my_rc->knobs_ptr+i)->knob_val == KNOB_IS_NO ? FALSE : TRUE,
 		       -1);
 
   }
@@ -452,16 +453,16 @@ create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
 				 G_TYPE_STRING, 
 				 G_TYPE_STRING);
 
-  for(i=0; i<num_str; i++) {
+  for (i = 0; i < my_rc->string_size; i++) {
 
     /* No user comments yet */
-    (rc_strings+i)->user_comment = 0;
+    (my_rc->string_ptr + i)->user_comment = 0;
 
     gtk_list_store_append(str_store, &str_iter);
     gtk_list_store_set(str_store, &str_iter,
 		       STR_STATUS, UNCHANGED_ICON,
-		       STR_NAME, (rc_strings+i)->name,
-		       STR_VALUE, (rc_strings+i)->value,
+		       STR_NAME, (my_rc->string_ptr + i)->name,
+		       STR_VALUE, (my_rc->string_ptr + i)->value,
 		       -1);
 
   }
@@ -532,7 +533,7 @@ create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
   /* Let the show begin */
   gtk_main();
 
-  return 0;
+  return (0);
 }
 
 /* CALLBACKS */
@@ -542,7 +543,7 @@ delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
   GtkWidget *dialog;
   gint result;
 
-  if(dirty > 0) {
+  if (dirty > 0) {
 
     dialog = gtk_message_dialog_new(GTK_WINDOW(window),
 				    GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -558,7 +559,7 @@ delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 
   }
 
-  if(result == GTK_RESPONSE_YES) {
+  if (result == GTK_RESPONSE_YES) {
 
     return FALSE;
 
@@ -586,7 +587,7 @@ quit_pressed(GtkWidget *widget, gpointer data)
   gint result;
 
 
-  if(dirty > 0) {
+  if (dirty > 0) {
 
     dialog = gtk_message_dialog_new (GTK_WINDOW(window),
 				     GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -596,7 +597,7 @@ quit_pressed(GtkWidget *widget, gpointer data)
     result = gtk_dialog_run (GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
 
-    if(result == GTK_RESPONSE_YES) {
+    if (result == GTK_RESPONSE_YES) {
 
       save_geometry();
       gtk_main_quit();
@@ -631,17 +632,17 @@ commit_pressed(GtkWidget *widget, gpointer data)
   not_committed = 0;
   rc_file = getenv("FISH_RC");
 
-  if(dirty > 0) {
+  if (dirty > 0) {
 
     i = save_changes(r_ptr, r_num, s_ptr, s_num);
 
-    if(i == -1) not_committed = 1;			
+    if (i == -1) not_committed = 1;			
 
-    if(not_committed == 0) {
+    if (not_committed == 0) {
 
       retval = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(knob_store), &knob_iter);
 
-      while(retval) {
+      while (retval) {
 
 	gtk_list_store_set(knob_store, &knob_iter,
 			   KNOB_STATUS, UNCHANGED_ICON,
@@ -653,7 +654,7 @@ commit_pressed(GtkWidget *widget, gpointer data)
 
       retval = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(str_store), &str_iter);
 
-      while(retval) {
+      while (retval) {
 
 	gtk_list_store_set(str_store, &str_iter,
 			   STR_STATUS, UNCHANGED_ICON,
@@ -668,7 +669,7 @@ commit_pressed(GtkWidget *widget, gpointer data)
     }
 
     /* Pop up window */
-    if(not_committed == 1) {
+    if (not_committed == 1) {
 
       dialog = gtk_message_dialog_new(GTK_WINDOW(window),
 				      GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -702,7 +703,7 @@ commit_pressed(GtkWidget *widget, gpointer data)
 
   }
 
-  if(not_committed == 0) {
+  if (not_committed == 0) {
 
     dirty = NOT_DIRTY;
     gtk_widget_set_sensitive(commit_button, FALSE);
@@ -723,7 +724,7 @@ knob_tree_on_row(GtkTreeSelection *treeselection,
   GtkTreeModel *model;
   GtkTreeIter iter;
 
-  if(old_context_id != 0) {
+  if (old_context_id != 0) {
 
     gtk_statusbar_pop(GTK_STATUSBAR(my_status), old_context_id);
 
@@ -742,9 +743,9 @@ knob_tree_on_row(GtkTreeSelection *treeselection,
   fprintf(stderr, "Selected knob: %s\n", knob_name);
 #endif
 
-  for(i=0; i<r_num; i++) {
+  for (i=0; i<r_num; i++) {
 
-    if((strncmp(r_ptr[i].name, knob_name, 255)) == 0) break;
+    if ((strncmp(r_ptr[i].name, knob_name, 255)) == 0) break;
 
   }
 
@@ -772,7 +773,7 @@ str_tree_on_row(GtkTreeSelection *treeselection,
   GtkTreeModel *model;
   GtkTreeIter iter;
 
-  if(old_context_id != 0) {
+  if (old_context_id != 0) {
 
     gtk_statusbar_pop(GTK_STATUSBAR(my_status), old_context_id);
 
@@ -792,9 +793,9 @@ str_tree_on_row(GtkTreeSelection *treeselection,
   fprintf(stderr, "Selected string: %s\n", str_data);
 #endif
 
-  for(i=0; i<s_num; i++) {
+  for (i=0; i<s_num; i++) {
 
-    if((strncmp(s_ptr[i].name, str_data, 255)) == 0) break;
+    if ((strncmp(s_ptr[i].name, str_data, 255)) == 0) break;
 
   }
 
@@ -838,9 +839,9 @@ str_edited_callback(GtkCellRendererText *cell,
 		     STR_NAME, &str_data,
 		     -1);
 
-  for(i=0; i<s_num; i++) {
+  for (i=0; i<s_num; i++) {
 
-    if((strncmp(s_ptr[i].name, str_data, 255)) == 0) break;
+    if ((strncmp(s_ptr[i].name, str_data, 255)) == 0) break;
 
   }
 
@@ -852,11 +853,11 @@ str_edited_callback(GtkCellRendererText *cell,
 
   strncpy(s_ptr[i].value, new_text, 255);
 
-  if(!strncmp(s_ptr[i].value, s_ptr[i].orig, 255) && s_ptr[i].user_added == USER_ADDED_NO) {
+  if (!strncmp(s_ptr[i].value, s_ptr[i].orig, 255) && s_ptr[i].user_added == USER_ADDED_NO) {
 
     s_ptr[i].modified = MODIFIED_NO;
-    if(dirty > 0) dirty--;
-    if(dirty == NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
+    if (dirty > 0) dirty--;
+    if (dirty == NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
     gtk_list_store_set(str_store, &str_iter,
 		       STR_STATUS, UNCHANGED_ICON,
 		       -1);
@@ -906,15 +907,15 @@ knob_toggled_callback(GtkCellRendererToggle *cell,
 		     KNOB_NAME, &knob_name,
 		     -1);
 
-  for(i=0; i<r_num; i++) {
+  for (i=0; i < r_num; i++) {
 
-    if((strncmp(r_ptr[i].name, knob_name, 255)) == 0) break;
+    if ((strncmp(r_ptr[i].name, knob_name, 255)) == 0) break;
 
   }
 
   g_free(knob_name);
 
-  if(retval == TRUE) {
+  if (retval == TRUE) {
 
     gtk_list_store_set(knob_store, &knob_iter,
 		       KNOB_VALUE, FALSE,
@@ -922,7 +923,7 @@ knob_toggled_callback(GtkCellRendererToggle *cell,
     
     r_ptr[i].knob_val = KNOB_IS_NO;
 
-    if(r_ptr[i].knob_orig == KNOB_IS_YES) {
+    if (r_ptr[i].knob_orig == KNOB_IS_YES) {
 
       r_ptr[i].modified = MODIFIED_YES;
       dirty++;
@@ -931,11 +932,11 @@ knob_toggled_callback(GtkCellRendererToggle *cell,
 			 KNOB_STATUS, CHANGED_ICON,
 			 -1);
 
-    } else if(r_ptr[i].user_added == USER_ADDED_NO) {
+    } else if (r_ptr[i].user_added == USER_ADDED_NO) {
 
       r_ptr[i].modified = MODIFIED_NO;
-      if(dirty > 0) dirty--;
-      if(dirty == NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
+      if (dirty > 0) dirty--;
+      if (dirty == NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
       gtk_list_store_set(knob_store, &knob_iter,
 			 KNOB_STATUS, UNCHANGED_ICON,
 			 -1);
@@ -950,7 +951,7 @@ knob_toggled_callback(GtkCellRendererToggle *cell,
 
     r_ptr[i].knob_val = KNOB_IS_YES;
 
-    if(r_ptr[i].knob_orig == KNOB_IS_NO) {
+    if (r_ptr[i].knob_orig == KNOB_IS_NO) {
 
       r_ptr[i].modified = MODIFIED_YES;
       dirty++;
@@ -959,11 +960,11 @@ knob_toggled_callback(GtkCellRendererToggle *cell,
 			 KNOB_STATUS, CHANGED_ICON,
 			 -1);
 
-    } else if(r_ptr[i].user_added == USER_ADDED_NO) {
+    } else if (r_ptr[i].user_added == USER_ADDED_NO) {
 
       r_ptr[i].modified = MODIFIED_NO;
-      if(dirty > 0) dirty--;
-      if(dirty == NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
+      if (dirty > 0) dirty--;
+      if (dirty == NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
       gtk_list_store_set(knob_store, &knob_iter,
 			 KNOB_STATUS, UNCHANGED_ICON,
 			 -1);
@@ -1007,7 +1008,7 @@ about_pressed(GtkWidget *widget, gpointer data)
 static void
 add_pressed(GtkWidget * widget, gpointer data)
 {
-  if(add_win_up == FALSE) {
+  if (add_win_up == FALSE) {
 
     add_win_up = TRUE;
 
@@ -1089,20 +1090,9 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
   new_comment = (char *) gtk_entry_get_text(GTK_ENTRY(add_entry3));
 
   /* Check for duplicate entries */
-  for(i=0; i<r_num; i++) {
+  for (i=0; i<r_num; i++) {
 
-    if(!strncmp(r_ptr[i].name, new_name, 255)) {
-
-      dupe = 1;
-      break;
-
-    }
-
-  }
-
-  for(i=0; i<s_num; i++) {
-
-    if(!strncmp(s_ptr[i].name, new_name, 255)) {
+    if (!strncmp(r_ptr[i].name, new_name, 255)) {
 
       dupe = 1;
       break;
@@ -1111,7 +1101,18 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
 
   }
 
-  if(strlen(new_name) == 0 || strlen(new_value) == 0) {
+  for (i=0; i<s_num; i++) {
+
+    if (!strncmp(s_ptr[i].name, new_name, 255)) {
+
+      dupe = 1;
+      break;
+
+    }
+
+  }
+
+  if (strlen(new_name) == 0 || strlen(new_value) == 0) {
 
     /* Show warning dialog */
     dialog = gtk_message_dialog_new(GTK_WINDOW(window),
@@ -1123,7 +1124,7 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy (dialog);
 
-  } else if(new_value[0] != '"' || new_value[strlen(new_value)-1] != '"') {
+  } else if (new_value[0] != '"' || new_value[strlen(new_value)-1] != '"') {
 
     /* Show warning dialog */
     dialog = gtk_message_dialog_new(GTK_WINDOW(window),
@@ -1134,7 +1135,7 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
 
-  } else if(dupe == 1) {
+  } else if (dupe == 1) {
 
 #ifdef VERBOSE_CONSOLE	
     printf("Duplicated entry\n");
@@ -1157,15 +1158,15 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
 #endif
 
     /* Is a knob? */
-    if( !strncasecmp(new_value,KNOB_YES,255) || !strncasecmp(new_value,KNOB_NO,255)) {
+    if (!strncasecmp(new_value,KNOB_YES,255) || !strncasecmp(new_value,KNOB_NO,255)) {
 
       strncpy(r_ptr[r_num].name, new_name, 255);
       strncpy(r_ptr[r_num].comment, new_comment, 255);
       r_ptr[r_num].user_added = USER_ADDED_YES;
 
-      if(strlen(new_comment) > 0) r_ptr[r_num].user_comment = 1;
+      if (strlen(new_comment) > 0) r_ptr[r_num].user_comment = 1;
 
-      if(!strncasecmp(new_value, KNOB_YES, 255)) {
+      if (!strncasecmp(new_value, KNOB_YES, 255)) {
 
 	r_ptr[r_num].knob_val = KNOB_IS_YES;
 	r_ptr[r_num].knob_orig = KNOB_IS_YES;
@@ -1203,7 +1204,7 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
       strncpy(s_ptr[s_num].comment, new_comment, 255);
       s_ptr[s_num].user_added = USER_ADDED_YES;
 
-      if(strlen(new_comment) > 0) s_ptr[s_num].user_comment = 1;
+      if (strlen(new_comment) > 0) s_ptr[s_num].user_comment = 1;
 
       s_ptr[s_num].modified = MODIFIED_YES;
       dirty++;
@@ -1258,13 +1259,13 @@ save_geometry(void)
 
   gtk_window_get_size(GTK_WINDOW(window), &newsize[0], &newsize[1]);
 
-  if(oldsize[0] != newsize[0] || oldsize[1] != newsize[1]) {
+  if (oldsize[0] != newsize[0] || oldsize[1] != newsize[1]) {
 
     homedir = getenv("HOME");
-    if(homedir == NULL) return;
+    if (homedir == NULL) return;
     snprintf(temp, FILENAME_MAX, "%s/%s", homedir, ".thefishrc");
     fd=open(temp, O_WRONLY|O_CREAT|O_TRUNC, 0666);
-    if(fd == -1) return;
+    if (fd == -1) return;
     fp=fdopen(fd, "a");
     fprintf(fp, "geometry=%i,%i\n", newsize[0], newsize[1]);
     fclose(fp);

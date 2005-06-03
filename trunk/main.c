@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <sysexits.h>
 
 #if defined(WITH_GTK)
 #include <gtk/gtk.h>
@@ -75,14 +76,14 @@ main(int argc, char **argv)
 
 #if !defined(NO_GUI)
   envtest = getenv("DISPLAY");
-  if(envtest == NULL) wantconsole=1;
+  if (envtest == NULL) wantconsole=1;
 #else
   wantconsole = 1;
 #endif
 
-  while((ch = getopt(argc, argv, "cvh")) != -1) {
+  while ((ch = getopt(argc, argv, "cvh")) != -1) {
 
-    switch(ch) {
+    switch (ch) {
 
     case 'c':
       wantconsole = 1;
@@ -90,11 +91,11 @@ main(int argc, char **argv)
 
     case 'v':
       about();
-
+      /* NOTREACHED */
     case 'h':
     default:
       usage();
-
+      /* NOTREACHED */
     }
 
   }
@@ -103,7 +104,7 @@ main(int argc, char **argv)
   argv += optind;
 
 #if defined(WITH_GTK)	
-  if(wantconsole == 0) gtk_init (&argc, &argv);
+  if (wantconsole == 0) gtk_init (&argc, &argv);
 #endif
 
   defaults_rc_file = getenv("FISH_RC_DEFAULTS");
@@ -137,7 +138,7 @@ main(int argc, char **argv)
   retval = merge_lists(my_rc_defaults,
 		       my_rc);
 
-  if(retval == -1) {
+  if (retval == -1) {
 
     perror("merge_lists()");
     exit(EXIT_FAILURE);
@@ -153,7 +154,7 @@ main(int argc, char **argv)
 
   /* Fix the problem with ncurses_ui not knowing about user_comments state */
   current = my_rc_defaults->knobs_ptr;
-  for(counter = 0; counter < my_rc_defaults->knobs_size; counter++) {
+  for (counter = 0; counter < my_rc_defaults->knobs_size; counter++) {
 
     current->user_comment = 0;
     current++;
@@ -161,7 +162,7 @@ main(int argc, char **argv)
   }
 
   current = my_rc_defaults->string_ptr;
-  for(counter = 0; counter < my_rc_defaults->string_size; counter++) {
+  for (counter = 0; counter < my_rc_defaults->string_size; counter++) {
 
     current->user_comment = 0;
     current++;
@@ -169,11 +170,10 @@ main(int argc, char **argv)
   }
 
   /* Launch UI */
-  if(wantconsole == 0) {
+  if (wantconsole == 0) {
 
 #if defined(WITH_GTK)
-    create_gtk_ui(my_rc_defaults->knobs_ptr, my_rc_defaults->knobs_size,
-		  my_rc_defaults->string_ptr, my_rc_defaults->string_size);
+    create_gtk_ui(my_rc_defaults);
 #endif
 
 #if defined(WITH_QT)
@@ -201,7 +201,7 @@ usage(void)
   printf("\t-c\tforce console mode\n");
   printf("\t-v\tshow version and exit\n");
   printf("\t-h\tshow this screen\n");
-  exit(EXIT_SUCCESS);
+  exit(EX_USAGE);
 
 }
 
@@ -213,6 +213,6 @@ about(void)
 	 "Copyright (c) 2002-2005, Miguel Mendez."
 	 " All rights reserved.\n", THE_FISH_VERSION);
   printf("Portions Copyright (c) 1995, Jordan Hubbard.\n");
-  exit(EXIT_SUCCESS);
+  exit(EX_OK);
 
 }

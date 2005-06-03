@@ -27,6 +27,6 @@
 #ifndef GTK_UI_H
 #define GTK_UI_H
 
-int create_gtk_ui(RC_NODE *, int, RC_NODE *, int);
+int create_gtk_ui(RC_CONF *);
 
 #endif

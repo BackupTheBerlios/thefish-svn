@@ -75,7 +75,7 @@ build_list(char *filename, RC_CONF *my_rc)
   alpha = malloc(sizeof(RC_NODE));
   memset(alpha, 0, sizeof(RC_NODE));
   current = alpha;
-  old= &scratch;
+  old = &scratch;
 
   pending = 0;
   retval = 0;
@@ -92,7 +92,7 @@ build_list(char *filename, RC_CONF *my_rc)
     old->next = current;
     current->next = NULL;
 
-  } while(retval == 0);
+  } while (retval == 0);
 
   /* Second pass, build knob and strings list */
   my_rc->knobs_ptr = malloc(tmp_knobs*sizeof(RC_NODE ));
@@ -109,11 +109,11 @@ build_list(char *filename, RC_CONF *my_rc)
 
 
   current = alpha;
-  while(current->next != NULL) {
+  while (current->next != NULL) {
 
-    if(isalnum((int)*current->name)) {
+    if (isalnum((int)*current->name)) {
 
-      if(current->knob == IS_KNOB) {
+      if (current->knob == IS_KNOB) {
 
 	*foo = *current;
 	foo++;
@@ -150,10 +150,10 @@ parseline(RC_NODE *current)
   int foo;
   int result = 1;
 
-  if(pending == 0) {
+  if (pending == 0) {
 
     result = yylex();
-    if(result == 0) return(-1);
+    if (result == 0) return(-1);
 
   } else {
 
@@ -164,7 +164,7 @@ parseline(RC_NODE *current)
   delta = 0;
   i = yytext[delta];
 
-  while(i != '=') {
+  while (i != '=') {
 
     current->name[delta] = i;
     delta++;
@@ -174,9 +174,9 @@ parseline(RC_NODE *current)
   current->name[delta] = (char) 0;
 
   /* Exception list */
-  for(foo=0; foo<(sizeof(except)/sizeof(char *)); foo++) {
+  for (foo=0; foo < (sizeof(except)/sizeof(char *)); foo++) {
 
-    if(!strncmp(current->name, except[foo], 255)) {
+    if (!strncmp(current->name, except[foo], 255)) {
 
       is_except = 1;
       break;			
@@ -186,10 +186,10 @@ parseline(RC_NODE *current)
 
 
   result = yylex(); 
-  if(result == 0) return(-1);
+  if (result == 0) return(-1);
   
   /* Check for KNOB_YES or KNOB_NO */
-  if(!strncmp(yytext, KNOB_YES, strlen(KNOB_YES))) {
+  if (!strncmp(yytext, KNOB_YES, strlen(KNOB_YES))) {
 
     current->knob = IS_KNOB;
     current->knob_val = KNOB_IS_YES;
@@ -197,7 +197,7 @@ parseline(RC_NODE *current)
     current->modified = MODIFIED_NO;
     tmp_knobs++;
 	
-  } else if(!strncmp(yytext, KNOB_NO, strlen(KNOB_NO)) && is_except == 0) {
+  } else if (!strncmp(yytext, KNOB_NO, strlen(KNOB_NO)) && is_except == 0) {
 
     current->knob = IS_KNOB;
     current->knob_val = KNOB_IS_NO;
@@ -216,7 +216,7 @@ parseline(RC_NODE *current)
 
     i = yytext[delta];
 
-    while( i != '"' && i != '\n' && i != (char) 0) {
+    while (i != '"' && i != '\n' && i != (char) 0) {
 
       current->value[delta] = i;
       current->orig[delta] = i;
@@ -236,15 +236,15 @@ parseline(RC_NODE *current)
 
 
   result = yylex();
-  if(result == 0) return(-1);
+  if (result == 0) return(-1);
   i = *yytext;
   delta = 0;
-  if(i == '#') {
+  if (i == '#') {
 
     compos = 0;
     delta++;
     i = yytext[delta];
-    while(i != '\n') {
+    while (i != '\n') {
 
       current->comment[compos] = i;
       delta++;
@@ -276,7 +276,7 @@ merge_lists(RC_CONF *my_rc_defaults, RC_CONF *my_rc)
   RC_NODE *rc_str_final;
   RC_NODE *baz, *bar, *aux;
   int total_nodes;
-  int foo,j,k;
+  int foo, j, k;
   int node_present;
 
   total_nodes = my_rc_defaults->knobs_size;
@@ -293,12 +293,12 @@ merge_lists(RC_CONF *my_rc_defaults, RC_CONF *my_rc)
   baz = my_rc->knobs_ptr;
   bar = rc_knobs_final;
 
-  for(j = 0; j<total_nodes; j++) {
+  for (j = 0; j<total_nodes; j++) {
 
     baz = my_rc->knobs_ptr;
-    for(foo = 0; foo < my_rc->knobs_size; foo++) {
+    for (foo = 0; foo < my_rc->knobs_size; foo++) {
 
-      if(!strncmp(bar->name, baz->name, 255)) {
+      if (!strncmp(bar->name, baz->name, 255)) {
 #ifdef VERBOSE_CONSOLE
 	printf("Overridden---> %s\n", bar->name);
 #endif
@@ -319,22 +319,22 @@ merge_lists(RC_CONF *my_rc_defaults, RC_CONF *my_rc)
   total_nodes = my_rc_defaults->knobs_size;
   baz = my_rc->knobs_ptr;
 
-  for(j = 0; j < my_rc->knobs_size; j++) {
+  for (j = 0; j < my_rc->knobs_size; j++) {
 
     node_present = 0;
     bar = my_rc_defaults->knobs_ptr;
    
-    for(k = 0; k < my_rc_defaults->knobs_size; k++) {
+    for (k = 0; k < my_rc_defaults->knobs_size; k++) {
 
-      if(!strncmp(baz->name, bar->name, 255)) node_present = 1;
+      if (!strncmp(baz->name, bar->name, 255)) node_present = 1;
       bar++;
 
     }
 
     aux = rc_knobs_final;
-    for(k = 0; k < total_nodes; k++) {
+    for (k = 0; k < total_nodes; k++) {
 
-      if(!strncmp(baz->name, aux->name, 255)) {
+      if (!strncmp(baz->name, aux->name, 255)) {
 
 #ifdef VERBOSE_CONSOLE
 	printf("Dupe -> %s\n", aux->name);
@@ -349,7 +349,7 @@ merge_lists(RC_CONF *my_rc_defaults, RC_CONF *my_rc)
 
     }
 
-    if(node_present == 0) {
+    if (node_present == 0) {
 
       memcpy((rc_knobs_final+total_nodes), baz, sizeof(RC_NODE));
       total_nodes++;
@@ -374,12 +374,12 @@ merge_lists(RC_CONF *my_rc_defaults, RC_CONF *my_rc)
   bar = rc_str_final;
 
 
-  for(j = 0; j < my_rc_defaults->string_size; j++) {
+  for (j = 0; j < my_rc_defaults->string_size; j++) {
 
     baz = my_rc->string_ptr;
-    for(foo = 0; foo < my_rc->string_size; foo++) {
+    for (foo = 0; foo < my_rc->string_size; foo++) {
 
-      if(!strncmp(bar->name, baz->name, 255)) {
+      if (!strncmp(bar->name, baz->name, 255)) {
 
 #ifdef VERBOSE_CONSOLE
 	fprintf(stderr,"Overridden---> %s\n", bar->name);
@@ -404,23 +404,23 @@ merge_lists(RC_CONF *my_rc_defaults, RC_CONF *my_rc)
   total_nodes = my_rc_defaults->string_size;
 
   baz = my_rc->string_ptr;
-  for(j = 0; j < my_rc->string_size; j++) {
+  for (j = 0; j < my_rc->string_size; j++) {
 
     node_present = 0;
     bar = my_rc_defaults->string_ptr;
 
-    for(k = 0; k < my_rc_defaults->string_size; k++) {
+    for (k = 0; k < my_rc_defaults->string_size; k++) {
 
-      if(!strncmp(baz->name, bar->name, 255)) node_present=1;
+      if (!strncmp(baz->name, bar->name, 255)) node_present=1;
       bar++;
 
     }
 
 
     aux = rc_str_final;
-    for(k=0; k < total_nodes; k++) {
+    for (k=0; k < total_nodes; k++) {
 
-      if(!strncmp(baz->name, aux->name, 255)) {
+      if (!strncmp(baz->name, aux->name, 255)) {
 
 #ifdef VERBOSE_CONSOLE
 	printf("Dupe -> %s\n", aux->name);
@@ -437,7 +437,7 @@ merge_lists(RC_CONF *my_rc_defaults, RC_CONF *my_rc)
     }
 
 
-    if(node_present == 0) {
+    if (node_present == 0) {
 
 #ifdef VERBOSE_CONSOLE
       printf("Adding new string: %s\n", baz->name);
@@ -471,12 +471,12 @@ list_sort(RC_NODE *rc_data, int num)
   do {
 
     changed = 0;
-    for(i = 0; i < num-1; i++) {
-      for(j = i; j < num-1-i; j++) {
+    for (i = 0; i < num-1; i++) {
+      for (j = i; j < num-1-i; j++) {
 
 	retval = strncmp(list[j].name, list[j+1].name, 255);	
 
-	if(retval >= 1) {
+	if (retval >= 1) {
 #ifdef VERBOSE_CONSOLE
 	  printf("Sorting: %s (%x) > %s (%x)\n", list[j].name, list+j,
 		 list[j+1].name, list+j+1);
@@ -489,6 +489,6 @@ list_sort(RC_NODE *rc_data, int num)
       }
     }
 
-  } while(changed == 1);
+  } while (changed == 1);
 
 }
