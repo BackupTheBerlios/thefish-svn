@@ -31,12 +31,14 @@
 
 #include <qhbox.h>
 #include <qvbox.h>
+#include <qlabel.h>
 #include <qlistview.h>
 #include <qobject.h>
 #include <qmessagebox.h>
 #include <qapplication.h>
 #include <qmainwindow.h>
 #include <qpushbutton.h>
+#include <qtable.h>
 #include <qtabwidget.h>
 
 #include <fcntl.h>
@@ -46,6 +48,8 @@
 #include "thefish.h"
 
 #include "qt_ui_priv.moc"
+
+#include "fish64.xpm"
 
 /* Window geometry */
 /* Deprecated for file, we
@@ -64,7 +68,7 @@ void save_geometry(void);
 
 extern "C" int
 create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
-	     RC_NODE *rc_strings, int num_str, 
+	     RC_NODE *rc_strings, int num_strings, 
 	     int argc, char **argv)
 {
   int i;
@@ -72,8 +76,11 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
   char temp[FILENAME_MAX];
   int fd;
   FILE *fp;
+  QListViewItem *element;
+  QCheckListItem *foo;
 
-  MiscDialogs mydialogs;
+  MyDialogs my_dialogs;
+  TableCallbacks my_tablecallbacks;
 
   QApplication *thefish = new QApplication( argc, argv);
 
@@ -87,13 +94,23 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
   QListView *knobs_table = new QListView;
   QListView *strings_table = new QListView;
 
-  knobs_table->addColumn("S", -1);
-  knobs_table->addColumn("Name", -1);
-  knobs_table->addColumn("Enabled",-1);
+  knobs_table->setSorting(-1);
+  strings_table->setSorting(-1);
 
-  strings_table->addColumn("S", -1);
+  strings_table->setAllColumnsShowFocus(TRUE);
+
+  knobs_table->addColumn("Variable Name", -1);
+
   strings_table->addColumn("Name", -1);
   strings_table->addColumn("Value",-1);
+
+  QObject::connect( strings_table, SIGNAL(itemRenamed(QListViewItem*, int, const QString &)),
+		    &my_tablecallbacks, SLOT(StringChanged(QListViewItem*, int, const QString &)));
+
+
+  QObject::connect( knobs_table, SIGNAL(clicked(QListViewItem *)),
+		    &my_tablecallbacks, SLOT(KnobChanged(QListViewItem*)));
+
 
   main_tab.addTab(knobs_table, "Knobs");
   main_tab.addTab(strings_table, "Strings");
@@ -108,8 +125,8 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
   // No save for now...
   SaveButton.setEnabled(FALSE);
 
-  QObject::connect( &QuitButton, SIGNAL(clicked()), &mydialogs, SLOT(CheckSaved()));
-  QObject::connect( &AboutButton, SIGNAL(clicked()), &mydialogs, SLOT(ShowAbout()));
+  QObject::connect( &QuitButton, SIGNAL(clicked()), &my_dialogs, SLOT(CheckSaved()));
+  QObject::connect( &AboutButton, SIGNAL(clicked()), &my_dialogs, SLOT(ShowAbout()));
 
   /* Set the size.
    * We're now using human readable data, handle the migration
@@ -149,6 +166,48 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   }
 
+// Build the table
+
+  knobs_table->setColumnWidthMode ( 1, QListView::Maximum);
+  knobs_table->setRootIsDecorated( FALSE );
+
+
+  for(i=num_knobs-1;i>=0;i--) {
+
+    /* No user comments yet */
+    (rc_knobs+i)->user_comment=0;
+
+    foo = new QCheckListItem( knobs_table, (rc_knobs+i)->name, QCheckListItem::CheckBox);
+
+    if( (rc_knobs+i)->knob_val==KNOB_IS_NO) {
+
+      foo->setOn(FALSE);
+      
+    } else {
+
+      foo->setOn(TRUE);
+
+    }
+
+  }
+
+
+  for(i=num_strings-1;i>=0;i--) {
+
+    /* No user comments yet */
+    (rc_strings+i)->user_comment=0;
+
+    element = new QListViewItem( strings_table, (rc_strings+i)->name, (rc_strings+i)->value);
+    element->setRenameEnabled( 0, FALSE);
+    element->setRenameEnabled( 1, TRUE);
+
+  }
+
+  // Set the app icon
+  QPixmap my_icon((const char **) fish64_xpm);
+
+  mw->setIcon((const QPixmap ) my_icon);
+
   mw->setCaption( "The Fish " THE_FISH_VERSION);
   mw->setCentralWidget( vbox );
   thefish->setMainWidget(mw);
@@ -163,7 +222,7 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 }
 
 void 
-MiscDialogs::CheckSaved()
+MyDialogs::CheckSaved()
 {
   int retcode;
 
@@ -192,7 +251,7 @@ MiscDialogs::CheckSaved()
 }
 
 void
-MiscDialogs::ShowAbout()
+MyDialogs::ShowAbout()
 {
 
   QMessageBox::about( 0, "About The Fish",
@@ -205,6 +264,33 @@ MiscDialogs::ShowAbout()
 		      "http://www.energyhq.es.eu.org/thefish.html\n"
 		      ); 
 
+}
+
+void 
+TableCallbacks::StringChanged(QListViewItem * item, int col, const QString & text)
+{
+  QString value;
+
+  value = item->text(0);
+  printf("Se ha cambiado %s a %s\n",value.ascii(),text.ascii());
+
+}
+
+void
+TableCallbacks::KnobChanged(QListViewItem *item)
+{
+  QString value;
+  QCheckListItem *foo;
+
+  value = item->text(0);
+
+  foo = (QCheckListItem *) item;
+
+  if(foo->isOn()) {
+
+  printf("Ahora %s esta activo\n", value.ascii() );
+
+  }
 }
 
 void 

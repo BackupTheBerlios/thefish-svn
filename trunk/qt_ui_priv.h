@@ -29,19 +29,32 @@
 #define QT_UI_PRIV_H
 
 #include <qobject.h>
+#include <qlistview.h>
+#include <qstring.h>
 
-class MiscDialogs : public QObject {
-    Q_OBJECT
+class MyDialogs : public QObject {
+  Q_OBJECT
 
 public:
 
 
 public slots:
 
-    void CheckSaved();
-    void ShowAbout();
+  void CheckSaved();
+  void ShowAbout();
 
 };
 
+class TableCallbacks : public QObject {
+  Q_OBJECT
+
+public:
+
+public slots:
+
+  void StringChanged(QListViewItem *, int, const QString &);
+  void KnobChanged(QListViewItem*);
+
+};
 
 #endif
