@@ -530,7 +530,7 @@ int
 show_about(dialogMenuItem *tmp)
 {
 
-  dialog_notify("             The Fish "
+  dialog_notify("        The Fish "
 		THE_FISH_VERSION
 		"\n"
 		"        A user friendly ncurses/GTK rc.conf editor.\n"

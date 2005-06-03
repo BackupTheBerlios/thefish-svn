@@ -42,13 +42,11 @@ extern char *tzname[2];
 #include "parser.h"
 #include "gtk_ui.h"
 #include "thefish.h"
-#include "icon16.xpm"
-#include "icon32.xpm"
-#include "icon48.xpm"
-#include "icon64.xpm"
+#include "fish16.xpm"
+#include "fish32.xpm"
+#include "fish48.xpm"
+#include "fish64.xpm"
 
-#define RC_DEFAULTS_FILE "/etc/defaults/rc.conf"
-#define RC_FILE "/etc/rc.conf"
 #define UNCHANGED_ICON GTK_STOCK_REMOVE
 
 /* Function prototypes */
@@ -77,7 +75,9 @@ int r_num;
 RC_NODE *r_ptr;
 
 GtkWidget **knob_label;
+GtkWidget **knob_event;
 GtkWidget **str_label;
+GtkWidget **str_event;
 GtkWidget **str_entry;
 GtkTooltips **knob_tips;
 GtkTooltips **str_tips;
@@ -110,18 +110,18 @@ GtkWidget *pixmap1;
 
 /* Add entry widgets */
 
-GtkWidget * add_window;
-GtkWidget * add_yes_button;
-GtkWidget * add_no_button;
-GtkWidget * add_hsep;
-GtkWidget * add_vbox;
-GtkWidget * add_hbutton;
-GtkWidget * add_entry1;
-GtkWidget * add_entry2;
-GtkWidget * add_entry3;
-GtkWidget * add_frame1;
-GtkWidget * add_frame2;
-GtkWidget * add_frame3;
+GtkWidget *add_window;
+GtkWidget *add_yes_button;
+GtkWidget *add_no_button;
+GtkWidget *add_hsep;
+GtkWidget *add_vbox;
+GtkWidget *add_hbutton;
+GtkWidget *add_entry1;
+GtkWidget *add_entry2;
+GtkWidget *add_entry3;
+GtkWidget *add_frame1;
+GtkWidget *add_frame2;
+GtkWidget *add_frame3;
 
 /* The quit confirm window */
 GtkWidget * quit_hbutton;
@@ -203,8 +203,8 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   /* Define main window */
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-  gtk_window_set_resizable(GTK_WINDOW(window),TRUE);
-  gtk_window_set_title(GTK_WINDOW(window),"The Fish");
+  gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
+  gtk_window_set_title(GTK_WINDOW(window), "The Fish " THE_FISH_VERSION);
 
 
   /* Set the size.
@@ -215,23 +215,23 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   if(homedir!=NULL) {
 
-    snprintf(temp,FILENAME_MAX,"%s/%s",homedir,".thefishrc");
-    fd=open(temp,O_RDONLY,0);
+    snprintf(temp, FILENAME_MAX, "%s/%s", homedir, ".thefishrc");
+    fd=open(temp, O_RDONLY, 0);
 
     if(fd!=-1) {
 
-      i=lseek(fd,0,SEEK_END);
-      lseek(fd,0,SEEK_SET);
+      i=lseek(fd, 0, SEEK_END);
+      lseek(fd, 0, SEEK_SET);
 
       if(i==sizeof(oldsize)) {
 
-	read(fd,&oldsize[0],sizeof(oldsize));
+	read(fd, &oldsize[0], sizeof(oldsize));
 	close(fd);
 
       } else {
 
-	fp=fdopen(fd,"r");
-	fscanf(fp,"geometry=%i,%i",&oldsize[0],&oldsize[1]);
+	fp=fdopen(fd, "r");
+	fscanf(fp, "geometry=%i,%i", &oldsize[0], &oldsize[1]);
 	fclose(fp);
 
       }
@@ -245,20 +245,20 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   }
 
-  gtk_window_set_default_size(GTK_WINDOW(window),oldsize[0],oldsize[1]);
+  gtk_window_set_default_size(GTK_WINDOW(window), oldsize[0], oldsize[1]);
 
   /* Set the icon */
-  icon16_pixbuf=gdk_pixbuf_new_from_xpm_data((const char **)icon16);
-  icon32_pixbuf=gdk_pixbuf_new_from_xpm_data((const char **)icon32);
-  icon48_pixbuf=gdk_pixbuf_new_from_xpm_data((const char **)icon48);
-  icon64_pixbuf=gdk_pixbuf_new_from_xpm_data((const char **)icon64);
+  icon16_pixbuf=gdk_pixbuf_new_from_xpm_data((const char **)fish16_xpm);
+  icon32_pixbuf=gdk_pixbuf_new_from_xpm_data((const char **)fish32_xpm);
+  icon48_pixbuf=gdk_pixbuf_new_from_xpm_data((const char **)fish48_xpm);
+  icon64_pixbuf=gdk_pixbuf_new_from_xpm_data((const char **)fish64_xpm);
 
-  g_list_append(icon_list,icon16_pixbuf);
-  g_list_append(icon_list,icon32_pixbuf);
-  g_list_append(icon_list,icon48_pixbuf);	
-  g_list_append(icon_list,icon64_pixbuf);
+  g_list_append(icon_list, icon16_pixbuf);
+  g_list_append(icon_list, icon32_pixbuf);
+  g_list_append(icon_list, icon48_pixbuf);	
+  g_list_append(icon_list, icon64_pixbuf);
 
-  gtk_window_set_icon(GTK_WINDOW(window),icon64_pixbuf);
+  gtk_window_set_icon(GTK_WINDOW(window), icon64_pixbuf);
   gtk_window_set_default_icon_list(icon_list);
 
   g_list_free (icon_list);
@@ -297,7 +297,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   gtk_tooltips_enable(quit_tip);
 
   /* Nothing to save yet, so disable the button */
-  gtk_widget_set_sensitive(commit_button,FALSE);
+  gtk_widget_set_sensitive(commit_button, FALSE);
 
   h_buttons=gtk_hbutton_box_new();
 
@@ -325,8 +325,8 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   g_signal_connect(GTK_OBJECT(add_button), "clicked",\
 		   GTK_SIGNAL_FUNC(add_pressed), NULL);
 
-  mytable1=gtk_table_new(num_knobs*2,4,FALSE);
-  gtk_table_set_col_spacings(GTK_TABLE(mytable1),10);
+  mytable1=gtk_table_new(num_knobs*2, 4, FALSE);
+  gtk_table_set_col_spacings(GTK_TABLE(mytable1), 10);
 
   /* Dynamic stuff generated at run time */
   /* First the knobs */
@@ -334,6 +334,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   /* Reserve memory for our pointer arrays */
   knob_label=malloc(2*num_knobs*sizeof(GtkWidget *));
+  knob_event=malloc(2*num_knobs*sizeof(GtkWidget *));
   radio_yes1=malloc(2*num_knobs*sizeof(GtkWidget *));
   radio_no1=malloc(2*num_knobs*sizeof(GtkWidget *));
   group1=malloc(2*num_knobs*sizeof(GtkWidget *));
@@ -351,58 +352,59 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
     /* No user comments yet */
     (rc_knobs+i)->user_comment=0;
 
-    radio_yes1[i]=gtk_radio_button_new_with_label(NULL,"yes");
+    radio_yes1[i]=gtk_radio_button_new_with_label(NULL, "yes");
     group1[i]=gtk_radio_button_get_group(GTK_RADIO_BUTTON(radio_yes1[i]));
-    radio_no1[i]=gtk_radio_button_new_with_label(group1[i],"no");
+    radio_no1[i]=gtk_radio_button_new_with_label(group1[i], "no");
 
     if((rc_knobs+i)->knob_val==KNOB_IS_NO) {
 
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_no1[i]),TRUE);
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_no1[i]), TRUE);
 
     } 
 
-    g_signal_connect(GTK_OBJECT(radio_yes1[i]), "pressed",\
+    g_signal_connect(GTK_OBJECT(radio_yes1[i]), "pressed",
 		     GTK_SIGNAL_FUNC(radio_yes_pressed), NULL);
 
-    g_signal_connect(GTK_OBJECT(radio_no1[i]), "pressed",\
+    g_signal_connect(GTK_OBJECT(radio_no1[i]), "pressed",
 		     GTK_SIGNAL_FUNC(radio_no_pressed), NULL);
 
 
-    knob_status[i]=gtk_image_new_from_stock(UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
+    knob_status[i]=gtk_image_new_from_stock(UNCHANGED_ICON, GTK_ICON_SIZE_MENU);
 
-    knob_label[i]=gtk_button_new_with_label(work->name);
-    gtk_button_set_relief(GTK_BUTTON(knob_label[i]),(GtkReliefStyle) GTK_RELIEF_NONE);
+    knob_event[i]=gtk_event_box_new();
+    knob_label[i]=gtk_label_new(work->name);
+    gtk_container_add(GTK_CONTAINER(knob_event[i]), knob_label[i]);
 
     knob_tips[i]=gtk_tooltips_new();
-    gtk_tooltips_set_tip(knob_tips[i],knob_label[i],(rc_knobs+i)->comment,"");
+    gtk_tooltips_set_tip(knob_tips[i],knob_event[i], (rc_knobs+i)->comment, "");
     gtk_tooltips_enable(knob_tips[i]);
 
     gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_status[i]),
-		     0,1, i, i+1, 0, GTK_EXPAND,0,0);
-    gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_label[i]), 
-		     1,2, i, i+1, 0, GTK_EXPAND,0,0);
+		     0,1, i, i+1, 0, GTK_EXPAND, 0, 0);
+    gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_event[i]), 
+		     1,2, i, i+1, 0, GTK_EXPAND, 0, 0);
     gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(radio_yes1[i]), 
-		     2,3, i, i+1, 0, GTK_EXPAND,0,0);
+		     2,3, i, i+1, 0, GTK_EXPAND, 0, 0);
     gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(radio_no1[i]), 
-		     3, 4,i,i+1, 0, GTK_EXPAND,0,0);
+		     3, 4, i, i+1, 0, GTK_EXPAND, 0, 0);
 
     work++;
 
   }
 
 
-  hseparator1 = gtk_hseparator_new ();	
+  hseparator1 = gtk_hseparator_new();
 
   /* New code added on Jan 25 2003
    * We use a scrolled window for both the knobs 
    * and the strings
    */
   scrolled_window1=gtk_scrolled_window_new(NULL, NULL);
-  gtk_container_set_border_width(GTK_CONTAINER(scrolled_window1),10);
-  gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window1),
+  gtk_container_set_border_width(GTK_CONTAINER(scrolled_window1), 10);
+  gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW(scrolled_window1),
 				  GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window1)
-					,mytable1);
+					, mytable1);
   gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 
   tab_bools=gtk_label_new("Knobs");
@@ -410,12 +412,12 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
   mynotebook=gtk_notebook_new();
 
-  gtk_notebook_append_page(GTK_NOTEBOOK(mynotebook),scrolled_window1,tab_bools);
+  gtk_notebook_append_page(GTK_NOTEBOOK(mynotebook), scrolled_window1, tab_bools);
 
   gtk_box_pack_start(GTK_BOX(vbox1), mynotebook, TRUE, TRUE, 0);
   gtk_box_pack_start(GTK_BOX(vbox1), hseparator1, FALSE, FALSE, 0);
   gtk_box_pack_start(GTK_BOX(vbox1), h_buttons, FALSE, FALSE, 0);
-  gtk_box_set_homogeneous(GTK_BOX(vbox1),FALSE);
+  gtk_box_set_homogeneous(GTK_BOX(vbox1), FALSE);
   gtk_container_add(GTK_CONTAINER(window), vbox1);
 
   gtk_widget_show(mynotebook);
@@ -424,6 +426,7 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   for(i=0;i<num_knobs;i++) {
 
     gtk_widget_show(knob_status[i]);
+    gtk_widget_show(knob_event[i]);
     gtk_widget_show(knob_label[i]);
     gtk_widget_show(radio_yes1[i]);
     gtk_widget_show(radio_no1[i]);
@@ -433,13 +436,14 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   /* Now, the strings */
   work=rc_strings;
 
-  mytable2=gtk_table_new(num_knobs*2,3,FALSE);
-  gtk_table_set_col_spacings(GTK_TABLE(mytable2),10);
-  gtk_table_set_homogeneous(GTK_TABLE(mytable2),FALSE);
+  mytable2=gtk_table_new(num_knobs*2, 3, FALSE);
+  gtk_table_set_col_spacings(GTK_TABLE(mytable2), 10);
+  gtk_table_set_homogeneous(GTK_TABLE(mytable2), FALSE);
 
   /* Allocate memory for our pointer arrays */
   str_label=malloc(2*num_str*sizeof(GtkWidget *));
   str_entry=malloc(2*num_str*sizeof(GtkWidget *));
+  str_event=malloc(2*num_str*sizeof(GtkWidget *));
   str_tips=malloc(2*num_str*sizeof(GtkTooltips *));	
   str_status=malloc(2*num_str*sizeof(GtkWidget *));
 
@@ -449,29 +453,30 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
 
     /* No user comments yet */
     (rc_strings+i)->user_comment=0;
-	
-    str_label[i]=gtk_button_new_with_label(work->name);
-    gtk_button_set_relief(GTK_BUTTON(str_label[i]),(GtkReliefStyle) GTK_RELIEF_NONE);
 
-    str_status[i]=gtk_image_new_from_stock(UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
+    str_label[i]=gtk_label_new(work->name);
+    str_event[i]=gtk_event_box_new();
+    gtk_container_add(GTK_CONTAINER(str_event[i]), str_label[i]);
+
+    str_status[i]=gtk_image_new_from_stock(UNCHANGED_ICON, GTK_ICON_SIZE_MENU);
     str_tips[i]=gtk_tooltips_new();
-    gtk_tooltips_set_tip(str_tips[i],str_label[i],(rc_strings+i)->comment,"");
+    gtk_tooltips_set_tip(str_tips[i], str_event[i], (rc_strings+i)->comment, "");
     gtk_tooltips_enable(str_tips[i]);
 
     str_entry[i]=gtk_entry_new();
-    gtk_entry_set_max_length(GTK_ENTRY(str_entry[i]),255);
-    gtk_entry_set_text(GTK_ENTRY(str_entry[i]),work->value);
+    gtk_entry_set_max_length(GTK_ENTRY(str_entry[i]), 255);
+    gtk_entry_set_text(GTK_ENTRY(str_entry[i]), work->value);
 
-    g_signal_connect(GTK_OBJECT(str_entry[i]), "changed",\
+    g_signal_connect(GTK_OBJECT(str_entry[i]), "changed",
 		     GTK_SIGNAL_FUNC(entry_modified), NULL);
 
 
     gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_status[i]),
-		     0,1, i, i+1, 0, GTK_EXPAND,0,0);
-    gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_label[i])
-		     , 1,2, i, i+1,NULL, NULL,0,0);
+		     0, 1, i, i+1, 0, GTK_EXPAND, 0, 0);
+    gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_event[i])
+		     , 1, 2, i, i+1, NULL, NULL, 0, 0);
     gtk_table_attach_defaults(GTK_TABLE(mytable2), GTK_WIDGET(str_entry[i])
-			      , 2,3, i, i+1);
+			      , 2, 3, i, i+1);
     work++;
 
   }
@@ -479,17 +484,18 @@ create_gtk_ui(RC_NODE *rc_knobs,int num_knobs,RC_NODE *rc_strings,int num_str)
   hseparator2 = gtk_hseparator_new();
 
   scrolled_window2=gtk_scrolled_window_new(NULL, NULL);
-  gtk_container_set_border_width(GTK_CONTAINER(scrolled_window2),10);
-  gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window2),
+  gtk_container_set_border_width(GTK_CONTAINER(scrolled_window2), 10);
+  gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW(scrolled_window2),
 				  GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window2)
-					,mytable2);
+					, mytable2);
 
-  gtk_notebook_append_page(GTK_NOTEBOOK(mynotebook),scrolled_window2,tab_str);
+  gtk_notebook_append_page(GTK_NOTEBOOK(mynotebook), scrolled_window2, tab_str);
 
   for(i=0;i<num_str;i++) {
-	
+
+    gtk_widget_show(str_event[i]);
     gtk_widget_show(str_label[i]);
     gtk_widget_show(str_entry[i]);
     gtk_widget_show(str_status[i]);
@@ -625,11 +631,11 @@ commit_pressed( GtkWidget *widget, gpointer data)
       rc_file=getenv("FISH_RC");
       if(rc_file!=NULL) {
 
-	fd=fopen(rc_file,"a");
+	fd=fopen(rc_file, "a");
 
       } else { 
 
-	fd=fopen(RC_FILE,"a");
+	fd=fopen(RC_FILE, "a");
 
       }
 
@@ -653,13 +659,13 @@ commit_pressed( GtkWidget *widget, gpointer data)
 
 	    if(work->user_comment==0) {
 
-	      fprintf(fd,"%s=%s\n",work->name,\
+	      fprintf(fd,"%s=%s\n", work->name,
 		      work->knob_val == KNOB_IS_YES ? KNOB_YES : KNOB_NO);
 
 	    } else {
 
-	      fprintf(fd,"%s=%s\t# %s\n",work->name,\
-		      work->knob_val == KNOB_IS_YES ? KNOB_YES : KNOB_NO,\
+	      fprintf(fd,"%s=%s\t# %s\n", work->name,
+		      work->knob_val == KNOB_IS_YES ? KNOB_YES : KNOB_NO,
 		      work->comment);
 
 	    }
@@ -684,11 +690,11 @@ commit_pressed( GtkWidget *widget, gpointer data)
 
 	    if(work->user_comment==0) {
 
-	      fprintf(fd,"%s=%s\n",work->name,work->value);
+	      fprintf(fd,"%s=%s\n", work->name, work->value);
 
 	    } else {
 
-	      fprintf(fd,"%s=%s\t# %s\n",work->name,work->value,\
+	      fprintf(fd,"%s=%s\t# %s\n", work->name, work->value,
 		      work->comment);
 
 	    }
@@ -696,9 +702,9 @@ commit_pressed( GtkWidget *widget, gpointer data)
 	    work->user_comment=0;
 	    work->modified=MODIFIED_NO;
 	    work->user_added=USER_ADDED_NO;
-	    strncpy(work->orig,work->value,255);
+	    strncpy(work->orig, work->value, 255);
 	    gtk_image_set_from_stock(GTK_IMAGE(str_status[i]),
-				     UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
+				     UNCHANGED_ICON, GTK_ICON_SIZE_MENU);
 	  }
 
 	  work++;
@@ -728,7 +734,7 @@ commit_pressed( GtkWidget *widget, gpointer data)
       }
 
       gtk_dialog_run (GTK_DIALOG(dialog));
-      gtk_widget_destroy (dialog);
+      gtk_widget_destroy(dialog);
 
     } else {
 
@@ -739,14 +745,14 @@ commit_pressed( GtkWidget *widget, gpointer data)
 				       "There are no unsaved changes");
 
       gtk_dialog_run (GTK_DIALOG(dialog));
-      gtk_widget_destroy (dialog);
+      gtk_widget_destroy(dialog);
 
     }
 
     if(not_committed==0) {
 
       dirty=NOT_DIRTY;
-      gtk_widget_set_sensitive(commit_button,FALSE);
+      gtk_widget_set_sensitive(commit_button, FALSE);
 
     }
   }
@@ -775,13 +781,13 @@ radio_yes_pressed( GtkWidget *widget, gpointer data)
     }
 
 #ifdef VERBOSE_CONSOLE
-    printf("Pointer comparison: %x %x\n",widget,radio_yes1[i]);
+    printf("Pointer comparison: %x %x\n", widget, radio_yes1[i]);
 #endif
     work++;
   }
 
 #ifdef VERBOSE_CONSOLE
-  printf("You pressed YES on widget %i : %s\n",i,work->name);	
+  printf("You pressed YES on widget %i : %s\n", i, work->name);	
 #endif
 
   work->knob_val=KNOB_IS_YES;
@@ -790,19 +796,19 @@ radio_yes_pressed( GtkWidget *widget, gpointer data)
 
     work->modified=MODIFIED_YES;
     dirty++;
-    gtk_widget_set_sensitive(commit_button,TRUE);
+    gtk_widget_set_sensitive(commit_button, TRUE);
     gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]),
-			     GTK_STOCK_SAVE,GTK_ICON_SIZE_MENU);
+			     GTK_STOCK_SAVE, GTK_ICON_SIZE_MENU);
 
 
   } else if(work->user_added==USER_ADDED_NO) {
 
     work->modified=MODIFIED_NO;
     gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]),
-			     UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
+			     UNCHANGED_ICON, GTK_ICON_SIZE_MENU);
     if(dirty>0) dirty--;
-    if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button,FALSE);
-	
+    if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
+
   }
 
 }
@@ -826,14 +832,14 @@ radio_no_pressed( GtkWidget *widget, gpointer data)
     }
 
 #ifdef VERBOSE_CONSOLE
-    printf("Pointer comparison: %x %x\n",widget,radio_yes1[i]);
+    printf("Pointer comparison: %x %x\n", widget, radio_yes1[i]);
 #endif
     work++;
 
   }
 
 #ifdef VERBOSE_CONSOLE
-  printf("You pressed NO on widget %i : %s\n",i,work->name);	
+  printf("You pressed NO on widget %i : %s\n", i, work->name);
 #endif
 
   work->knob_val=KNOB_IS_NO;
@@ -841,17 +847,17 @@ radio_no_pressed( GtkWidget *widget, gpointer data)
 
     work->modified=MODIFIED_YES;
     dirty++;
-    gtk_widget_set_sensitive(commit_button,TRUE);
+    gtk_widget_set_sensitive(commit_button, TRUE);
     gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]),
-			     GTK_STOCK_SAVE,GTK_ICON_SIZE_MENU);
+			     GTK_STOCK_SAVE, GTK_ICON_SIZE_MENU);
 
   } else if(work->user_added==USER_ADDED_NO) {
 
     work->modified=MODIFIED_NO;
     if(dirty>0) dirty--;
-    if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button,FALSE);
+    if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
     gtk_image_set_from_stock(GTK_IMAGE(knob_status[i]),
-			     UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
+			     UNCHANGED_ICON, GTK_ICON_SIZE_MENU);
   }
 
 }
@@ -878,7 +884,7 @@ entry_modified(GtkWidget *widget, gpointer data)
     }
 
 #ifdef VERBOSE_CONSOLE
-    printf("Pointer comparison: %x %x\n",widget,radio_yes1[i]);
+    printf("Pointer comparison: %x %x\n", widget, radio_yes1[i]);
 #endif
     work++;
 
@@ -887,25 +893,25 @@ entry_modified(GtkWidget *widget, gpointer data)
   entry_val=(char *) gtk_entry_get_text(GTK_ENTRY(widget));
 
 #ifdef VERBOSE_CONSOLE
-  printf("You modified widget %s (%i) : %s -> %s\n",work->name,i,\
-	 work->value,entry_val);	
+  printf("You modified widget %s (%i) : %s -> %s\n", work->name, i,
+	 work->value, entry_val);
 #endif
 
-  strncpy(work->value,entry_val,255);
-  if(!strncmp(work->value,work->orig,255) && work->user_added==USER_ADDED_NO) {
+  strncpy(work->value, entry_val, 255);
+  if(!strncmp(work->value, work->orig, 255) && work->user_added==USER_ADDED_NO) {
 
     work->modified=MODIFIED_NO;
     if(dirty>0) dirty--;
-    if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button,FALSE);
+    if(dirty==NOT_DIRTY) gtk_widget_set_sensitive(commit_button, FALSE);
     gtk_image_set_from_stock(GTK_IMAGE(str_status[i]),
-			     UNCHANGED_ICON,GTK_ICON_SIZE_MENU);
+			     UNCHANGED_ICON, GTK_ICON_SIZE_MENU);
   } else {
 
     work->modified=MODIFIED_YES;
     dirty++;
-    gtk_widget_set_sensitive(commit_button,TRUE);
+    gtk_widget_set_sensitive(commit_button, TRUE);
     gtk_image_set_from_stock(GTK_IMAGE(str_status[i]),
-			     GTK_STOCK_SAVE,GTK_ICON_SIZE_MENU);
+			     GTK_STOCK_SAVE, GTK_ICON_SIZE_MENU);
   }
 
 }
@@ -945,8 +951,8 @@ add_pressed(GtkWidget * widget, gpointer data)
 
     add_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_position (GTK_WINDOW (add_window), GTK_WIN_POS_CENTER);
-    gtk_window_set_resizable(GTK_WINDOW(add_window),TRUE);
-    gtk_window_set_title(GTK_WINDOW(add_window),"Add new entry");
+    gtk_window_set_resizable(GTK_WINDOW(add_window), TRUE);
+    gtk_window_set_title(GTK_WINDOW(add_window), "Add new entry");
 
     add_yes_button = gtk_button_new_from_stock(GTK_STOCK_APPLY);
 
@@ -958,7 +964,7 @@ add_pressed(GtkWidget * widget, gpointer data)
     g_signal_connect(GTK_OBJECT(add_no_button), "clicked",\
 		     GTK_SIGNAL_FUNC(add_no_pressed), NULL);
 
-    add_hsep = gtk_hseparator_new ();
+    add_hsep = gtk_hseparator_new();
     add_vbox = gtk_vbox_new (FALSE, 0);
 
     add_hbutton=gtk_hbutton_box_new();
@@ -968,16 +974,16 @@ add_pressed(GtkWidget * widget, gpointer data)
 
     add_frame1=gtk_frame_new("Name");
     add_entry1=gtk_entry_new();
-    gtk_entry_set_max_length(GTK_ENTRY(add_entry1),255);
+    gtk_entry_set_max_length(GTK_ENTRY(add_entry1), 255);
 
     add_frame2=gtk_frame_new("Value");
     add_entry2=gtk_entry_new();
-    gtk_entry_set_max_length(GTK_ENTRY(add_entry2),255);
-    gtk_entry_set_text(GTK_ENTRY(add_entry2),"\"\"");
+    gtk_entry_set_max_length(GTK_ENTRY(add_entry2), 255);
+    gtk_entry_set_text(GTK_ENTRY(add_entry2), "\"\"");
 
     add_frame3=gtk_frame_new("Optional Comment");
     add_entry3=gtk_entry_new();
-    gtk_entry_set_max_length(GTK_ENTRY(add_entry3),255);
+    gtk_entry_set_max_length(GTK_ENTRY(add_entry3), 255);
 
     add_hsep = gtk_hseparator_new();
 
@@ -1032,7 +1038,7 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
   /* Check for duplicate entries */
   for(i=0;i<r_num;i++) {
 
-    if(!strncmp(r_ptr[i].name,new_name,255)) {
+    if(!strncmp(r_ptr[i].name, new_name, 255)) {
 
       dupe=1;
       break;
@@ -1043,7 +1049,7 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
 
   for(i=0;i<s_num;i++) {
 
-    if(!strncmp(s_ptr[i].name,new_name,255)) {
+    if(!strncmp(s_ptr[i].name, new_name, 255)) {
 
       dupe=1;
       break;
@@ -1100,19 +1106,19 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
     /* Is a knob? */
     if( !strncasecmp(new_value,KNOB_YES,255) || !strncasecmp(new_value,KNOB_NO,255)) {
 
-      strncpy(r_ptr[r_num].name,new_name,255);
-      strncpy(r_ptr[r_num].comment,new_comment,255);
+      strncpy(r_ptr[r_num].name, new_name, 255);
+      strncpy(r_ptr[r_num].comment, new_comment, 255);
       r_ptr[r_num].user_added=USER_ADDED_YES;
 
       if(strlen(new_comment)>0) r_ptr[r_num].user_comment=1;
 
-      if(!strncasecmp(new_value,KNOB_YES,255)) {
+      if(!strncasecmp(new_value, KNOB_YES, 255)) {
 
 	r_ptr[r_num].knob_val=KNOB_IS_YES;
 	r_ptr[r_num].knob_orig=KNOB_IS_YES;
 	r_ptr[r_num].modified=MODIFIED_YES;
 	dirty++;
-	gtk_widget_set_sensitive(commit_button,TRUE);
+	gtk_widget_set_sensitive(commit_button, TRUE);
 
       } else {
 
@@ -1126,40 +1132,42 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
 
       gtk_notebook_set_current_page(GTK_NOTEBOOK(mynotebook),(gint) 0);
 
-      radio_yes1[r_num]=gtk_radio_button_new_with_label(NULL,"yes");
+      radio_yes1[r_num]=gtk_radio_button_new_with_label(NULL, "yes");
       group1[r_num]=gtk_radio_button_get_group(GTK_RADIO_BUTTON(radio_yes1[r_num]));
-      radio_no1[r_num]=gtk_radio_button_new_with_label(group1[r_num],"no");
-      knob_status[r_num]=gtk_image_new_from_stock(GTK_STOCK_SAVE,GTK_ICON_SIZE_MENU);
+      radio_no1[r_num]=gtk_radio_button_new_with_label(group1[r_num], "no");
+      knob_status[r_num]=gtk_image_new_from_stock(GTK_STOCK_SAVE, GTK_ICON_SIZE_MENU);
 
       if(r_ptr[r_num].knob_val==KNOB_IS_NO) {
 
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_no1[r_num]),TRUE);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_no1[r_num]), TRUE);
 
       }
 
-      g_signal_connect(GTK_OBJECT(radio_yes1[r_num]), "pressed",\
+      g_signal_connect(GTK_OBJECT(radio_yes1[r_num]), "pressed",
 		       GTK_SIGNAL_FUNC(radio_yes_pressed), NULL);
 
-      g_signal_connect(GTK_OBJECT(radio_no1[r_num]), "pressed",\
+      g_signal_connect(GTK_OBJECT(radio_no1[r_num]), "pressed",
 		       GTK_SIGNAL_FUNC(radio_no_pressed), NULL);
 
-      knob_label[r_num]=gtk_button_new_with_label(r_ptr[r_num].name);
-      gtk_button_set_relief(GTK_BUTTON(knob_label[r_num]),\
-			    (GtkReliefStyle) GTK_RELIEF_NONE);
+      knob_label[r_num]=gtk_label_new(r_ptr[r_num].name);
+      knob_event[r_num]=gtk_event_box_new();
+      gtk_container_add(GTK_CONTAINER(knob_event[r_num]), knob_label[r_num]);
+
       knob_tips[r_num]=gtk_tooltips_new();
-      gtk_tooltips_set_tip(knob_tips[r_num],knob_label[r_num],r_ptr[r_num].comment,"");
+      gtk_tooltips_set_tip(knob_tips[r_num], knob_event[r_num], r_ptr[r_num].comment, "");
       gtk_tooltips_enable(knob_tips[r_num]);
 
       gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_status[r_num]),
-		       0,1, r_num, r_num+1, 0, GTK_EXPAND,0,0);
-      gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_label[r_num]), 
-		       1,2, r_num, r_num+1, 0, GTK_EXPAND,0,0);
+		       0, 1, r_num, r_num+1, 0, GTK_EXPAND, 0, 0);
+      gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(knob_event[r_num]), 
+		       1, 2, r_num, r_num+1, 0, GTK_EXPAND, 0, 0);
       gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(radio_yes1[r_num]), 
-		       2,3, r_num, r_num+1, 0, GTK_EXPAND,0,0);
+		       2, 3, r_num, r_num+1, 0, GTK_EXPAND, 0, 0);
       gtk_table_attach(GTK_TABLE(mytable1), GTK_WIDGET(radio_no1[r_num]), 
-		       3, 4,r_num,r_num+1, 0, GTK_EXPAND,0,0);
+		       3, 4, r_num, r_num+1, 0, GTK_EXPAND, 0, 0);
 
       gtk_widget_show(knob_status[r_num]);
+      gtk_widget_show(knob_event[r_num]);
       gtk_widget_show(knob_label[r_num]);
       gtk_widget_show(radio_yes1[r_num]);
       gtk_widget_show(radio_no1[r_num]);
@@ -1169,10 +1177,10 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
       /* Is a string */
     } else {
 
-      strncpy(s_ptr[s_num].name,new_name,255);
-      strncpy(s_ptr[s_num].value,new_value,255);
-      strncpy(s_ptr[s_num].orig,new_value,255);
-      strncpy(s_ptr[s_num].comment,new_comment,255);
+      strncpy(s_ptr[s_num].name, new_name, 255);
+      strncpy(s_ptr[s_num].value, new_value, 255);
+      strncpy(s_ptr[s_num].orig, new_value, 255);
+      strncpy(s_ptr[s_num].comment, new_comment, 255);
       s_ptr[s_num].user_added=USER_ADDED_YES;
 
       if(strlen(new_comment)>0) s_ptr[s_num].user_comment=1;
@@ -1180,39 +1188,41 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
       s_ptr[s_num].modified=MODIFIED_YES;
       dirty++;
 
-      gtk_widget_set_sensitive(commit_button,TRUE);
+      gtk_widget_set_sensitive(commit_button, TRUE);
 
       /* Switch page */
-      gtk_notebook_set_current_page(GTK_NOTEBOOK(mynotebook),(gint) 1);
+      gtk_notebook_set_current_page(GTK_NOTEBOOK(mynotebook), (gint) 1);
 
-      str_label[s_num]=gtk_button_new_with_label(s_ptr[s_num].name);
-      gtk_button_set_relief(GTK_BUTTON(str_label[s_num]),\
-			    (GtkReliefStyle) GTK_RELIEF_NONE);
+      str_label[s_num]=gtk_label_new(s_ptr[s_num].name);
+      str_event[s_num]=gtk_event_box_new();
+      gtk_container_add(GTK_CONTAINER(str_event[s_num]), str_label[s_num]);
+
       str_tips[s_num]=gtk_tooltips_new();
-      gtk_tooltips_set_tip(str_tips[s_num],str_label[s_num],s_ptr[s_num].comment,"");
+      gtk_tooltips_set_tip(str_tips[s_num], str_event[s_num], s_ptr[s_num].comment, "");
       gtk_tooltips_enable(str_tips[s_num]);
 
-      str_status[s_num]=gtk_image_new_from_stock(GTK_STOCK_SAVE,GTK_ICON_SIZE_MENU);
+      str_status[s_num]=gtk_image_new_from_stock(GTK_STOCK_SAVE, GTK_ICON_SIZE_MENU);
 
       str_entry[s_num]=gtk_entry_new();
 
-      gtk_entry_set_max_length(GTK_ENTRY(str_entry[s_num]),255);
+      gtk_entry_set_max_length(GTK_ENTRY(str_entry[s_num]), 255);
 
-      gtk_entry_set_text(GTK_ENTRY(str_entry[s_num]),s_ptr[s_num].value);
+      gtk_entry_set_text(GTK_ENTRY(str_entry[s_num]), s_ptr[s_num].value);
 
-      g_signal_connect(GTK_OBJECT(str_entry[s_num]), "changed",\
+      g_signal_connect(GTK_OBJECT(str_entry[s_num]), "changed",
 		       GTK_SIGNAL_FUNC(entry_modified), NULL);
 
       gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_status[s_num])
-		       , 0,1, s_num, s_num+1, 0, GTK_EXPAND,0,0);
-      gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_label[s_num])
-		       , 1,2, s_num, s_num+1,NULL, NULL,0,0);
+		       , 0, 1, s_num, s_num+1, 0, GTK_EXPAND, 0, 0);
+      gtk_table_attach(GTK_TABLE(mytable2), GTK_WIDGET(str_event[s_num])
+		       , 1, 2, s_num, s_num+1, NULL, NULL, 0, 0);
       gtk_table_attach_defaults(GTK_TABLE(mytable2), GTK_WIDGET(str_entry[s_num])
-				, 2,3, s_num, s_num+1);
+				, 2, 3, s_num, s_num+1);
 
       gtk_widget_show(str_status[s_num]);
       gtk_widget_show(str_entry[s_num]);
       gtk_widget_show(str_label[s_num]);
+      gtk_widget_show(str_event[s_num]);
 
       s_num++;			
 
@@ -1282,17 +1292,17 @@ save_geometry(void)
   int fd;
   FILE *fp;
 
-  gtk_window_get_size(GTK_WINDOW(window),&newsize[0],&newsize[1]);
+  gtk_window_get_size(GTK_WINDOW(window), &newsize[0], &newsize[1]);
 
   if(oldsize[0]!=newsize[0] || oldsize[1]!=newsize[1]) {
 
     homedir=getenv("HOME");
     if(homedir==NULL) return;
-    snprintf(temp,FILENAME_MAX,"%s/%s",homedir,".thefishrc");
-    fd=open(temp,O_WRONLY|O_CREAT|O_TRUNC,0666);
+    snprintf(temp, FILENAME_MAX, "%s/%s", homedir, ".thefishrc");
+    fd=open(temp, O_WRONLY|O_CREAT|O_TRUNC, 0666);
     if(fd==-1) return;
-    fp=fdopen(fd,"a");
-    fprintf(fp,"geometry=%i,%i\n",newsize[0],newsize[1]);
+    fp=fdopen(fd, "a");
+    fprintf(fp, "geometry=%i,%i\n", newsize[0], newsize[1]);
     fclose(fp);
     return;
   
