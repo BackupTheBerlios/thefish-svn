@@ -68,19 +68,19 @@ enum
 
 
 /* Function prototypes */
-gint delete_event( GtkWidget *, GdkEvent *, gpointer);
-void destroy( GtkWidget *, gpointer);
-void commit_pressed(GtkWidget *, gpointer);
-void quit_pressed(GtkWidget *, gpointer);
-void about_pressed(GtkWidget *, gpointer);
-void add_pressed(GtkWidget *, gpointer);
-void str_edited_callback(GtkCellRendererText *, gchar * , gchar *, gpointer);
-void knob_toggled_callback(GtkCellRendererToggle *, gchar *, gpointer);
-void add_yes_pressed(GtkWidget *, gpointer);
-void add_no_pressed(GtkWidget *, gpointer);
-void save_geometry(void);
-void knob_tree_on_row(GtkTreeSelection *, gpointer);
-void str_tree_on_row(GtkTreeSelection *, gpointer);
+static gint delete_event( GtkWidget *, GdkEvent *, gpointer);
+static void destroy( GtkWidget *, gpointer);
+static void commit_pressed(GtkWidget *, gpointer);
+static void quit_pressed(GtkWidget *, gpointer);
+static void about_pressed(GtkWidget *, gpointer);
+static void add_pressed(GtkWidget *, gpointer);
+static void str_edited_callback(GtkCellRendererText *, gchar * , gchar *, gpointer);
+static void knob_toggled_callback(GtkCellRendererToggle *, gchar *, gpointer);
+static void add_yes_pressed(GtkWidget *, gpointer);
+static void add_no_pressed(GtkWidget *, gpointer);
+static void save_geometry(void);
+static void knob_tree_on_row(GtkTreeSelection *, gpointer);
+static void str_tree_on_row(GtkTreeSelection *, gpointer);
 
 /* Some defines here */
 #define IS_DIRTY 1
@@ -88,73 +88,73 @@ void str_tree_on_row(GtkTreeSelection *, gpointer);
 
 /* These need to be accessed from the callback functions too */
 
-int r_num;
-RC_NODE *r_ptr;
+static int r_num;
+static RC_NODE *r_ptr;
 
-GtkListStore *knob_store;
-GtkListStore *str_store;
+static GtkListStore *knob_store;
+static GtkListStore *str_store;
 
-int s_num;
-RC_NODE *s_ptr;
+static int s_num;
+static RC_NODE *s_ptr;
 
-int dirty;
+static int dirty;
 
-GtkWidget *msg_window;
-GtkWidget *msg_button1;
-GtkWidget *msg_button2;
-GtkWidget *quit_yes_button;
-GtkWidget *quit_no_button;
-GtkWidget *msg_hsep;
-GtkWidget *msg_vsep;
-GtkWidget *msg_vbox;
-GtkWidget *msg_label;
-GtkWidget *msg_pixmap;
-GtkWidget *msg_hbox;
-GtkWidget *popup_window;
-GtkWidget *popup_button;
-GtkWidget *popup_hsep;
-GtkWidget *popup_vbox;
-GtkWidget *pixmap1;
+/* static GtkWidget *msg_window; */
+/* static GtkWidget *msg_button1; */
+/* static GtkWidget *msg_button2; */
+/* static GtkWidget *quit_yes_button; */
+/* static GtkWidget *quit_no_button; */
+/* static GtkWidget *msg_hsep; */
+/* static GtkWidget *msg_vsep; */
+/* static GtkWidget *msg_vbox; */
+/* static GtkWidget *msg_label; */
+/* static GtkWidget *msg_pixmap; */
+/* static GtkWidget *msg_hbox; */
+/* static GtkWidget *popup_window; */
+/* static GtkWidget *popup_button; */
+/* static GtkWidget *popup_hsep; */
+/* static GtkWidget *popup_vbox; */
+/* static GtkWidget *pixmap1; */
 
 /* Add entry widgets */
 
-GtkWidget *add_window;
-GtkWidget *add_yes_button;
-GtkWidget *add_no_button;
-GtkWidget *add_hsep;
-GtkWidget *add_vbox;
-GtkWidget *add_hbutton;
-GtkWidget *add_entry1;
-GtkWidget *add_entry2;
-GtkWidget *add_entry3;
-GtkWidget *add_frame1;
-GtkWidget *add_frame2;
-GtkWidget *add_frame3;
+static GtkWidget *add_window;
+static GtkWidget *add_yes_button;
+static GtkWidget *add_no_button;
+static GtkWidget *add_hsep;
+static GtkWidget *add_vbox;
+static GtkWidget *add_hbutton;
+static GtkWidget *add_entry1;
+static GtkWidget *add_entry2;
+static GtkWidget *add_entry3;
+static GtkWidget *add_frame1;
+static GtkWidget *add_frame2;
+static GtkWidget *add_frame3;
 
 /* The quit confirm window */
-GtkWidget * quit_hbutton;
+/* static GtkWidget * quit_hbutton; */
 
 /* Avoid trying to create the same window twice */
-int commit_win_up;
-int about_win_up;
-int add_win_up;
-int quit_win_up;
+static int commit_win_up;
+static int about_win_up;
+static int add_win_up;
+static int quit_win_up;
 
-GtkWidget *commit_button;
-GtkWidget *window;
-GtkWidget *myviewport1;
-GtkWidget *myviewport2;
-GtkWidget *mynotebook;
-GtkWidget *my_status;
+static GtkWidget *commit_button;
+static GtkWidget *window;
+/* static GtkWidget *myviewport1; */
+/* static GtkWidget *myviewport2; */
+static GtkWidget *mynotebook;
+static GtkWidget *my_status;
 
 /* Window geometry */
 /* Deprecated for file, we
  * now use human readable data
  */
-int oldsize[2];
+static int oldsize[2];
 
 /* For the status bar */
-guint old_context_id;
+static guint old_context_id;
 
 /* This funcion creates the main UI */
 int
@@ -409,7 +409,7 @@ create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
   gtk_tree_view_append_column(GTK_TREE_VIEW(knob_tree), knob_name_column);
 
   knob_value_renderer = gtk_cell_renderer_toggle_new();
-  g_signal_connect(knob_value_renderer, "toggled", (GCallback) knob_toggled_callback, NULL);
+  g_signal_connect(knob_value_renderer, "toggled", G_CALLBACK(knob_toggled_callback), NULL);
   knob_value_column = gtk_tree_view_column_new_with_attributes("Enabled",
 							       knob_value_renderer,
 							       "active", KNOB_VALUE,
@@ -421,6 +421,12 @@ create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
 
   gtk_tree_view_set_rules_hint(GTK_TREE_VIEW(knob_tree), TRUE);
   gtk_tree_view_columns_autosize(GTK_TREE_VIEW(knob_tree));
+
+  /* Testing orderable */
+  gtk_tree_view_column_set_sort_column_id(knob_status_column, KNOB_STATUS);
+  gtk_tree_view_column_set_sort_column_id(knob_name_column, KNOB_NAME);
+  gtk_tree_view_column_set_sort_column_id(knob_value_column, KNOB_VALUE);
+
 
   knob_selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(knob_tree));
   gtk_tree_selection_set_mode(knob_selection, GTK_SELECTION_SINGLE);
@@ -519,6 +525,11 @@ create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
   gtk_tree_view_columns_autosize(GTK_TREE_VIEW(str_tree));
 
 
+  /* Testing orderable */
+  gtk_tree_view_column_set_sort_column_id(str_status_column, STR_STATUS);
+  gtk_tree_view_column_set_sort_column_id(str_name_column, STR_NAME);
+  gtk_tree_view_column_set_sort_column_id(str_value_column, STR_VALUE);
+
   str_selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(str_tree));
   gtk_tree_selection_set_mode(str_selection, GTK_SELECTION_SINGLE);
   g_signal_connect(G_OBJECT(str_selection), "changed",
@@ -545,8 +556,7 @@ create_gtk_ui(RC_NODE *rc_knobs, int num_knobs,
 }
 
 /* CALLBACKS */
-
-gint 
+static gint
 delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
   GtkWidget *dialog;
@@ -580,7 +590,7 @@ delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 
 }
 
-void 
+static void
 destroy(GtkWidget *widget, gpointer data)
 {
   save_geometry();
@@ -588,7 +598,7 @@ destroy(GtkWidget *widget, gpointer data)
 }
 
 /* Warn the user if she has unsaved changes */
-void 
+static void
 quit_pressed(GtkWidget *widget, gpointer data)
 {
 
@@ -626,7 +636,7 @@ quit_pressed(GtkWidget *widget, gpointer data)
  * This function saves changes to $FISH_RC or 
  * /etc/rc.conf
  */
-void 
+static void
 commit_pressed(GtkWidget *widget, gpointer data)
 {
 
@@ -801,14 +811,14 @@ commit_pressed(GtkWidget *widget, gpointer data)
 }
 
 /* Show brief description on what a clicked variable does. */
-void
+static void
 knob_tree_on_row(GtkTreeSelection *treeselection,
 		  gpointer user_data)
 {
 
   guint cont_id;
   int i;
-  char *path_string;
+  char *knob_name;
   GtkTreeModel *model;
   GtkTreeIter iter;
 
@@ -822,9 +832,24 @@ knob_tree_on_row(GtkTreeSelection *treeselection,
 					 "Info");
 
   gtk_tree_selection_get_selected(treeselection, &model, &iter);
-  path_string = gtk_tree_model_get_string_from_iter(model, &iter);
-  i = atoi(path_string);
-  g_free(path_string);
+
+  gtk_tree_model_get(model, &iter, 
+		     KNOB_NAME, &knob_name,
+		     -1);
+
+#ifdef DEBUG_ORDERABLE
+  fprintf(stderr, "Selected knob: %s\n", knob_name);
+#endif
+
+  for(i=0; i<r_num; i++) {
+
+    if((strncmp(r_ptr[i].name, knob_name, 255)) == 0) break;
+
+  }
+
+
+  g_free(knob_name);
+
 
   gtk_statusbar_push(GTK_STATUSBAR(my_status),
 		     cont_id,
@@ -835,7 +860,7 @@ knob_tree_on_row(GtkTreeSelection *treeselection,
 }
 
 /* Show brief description on what a clicked variable does. */
-void
+static void
 str_tree_on_row(GtkTreeSelection *treeselection,
 		gpointer user_data)
 
@@ -843,6 +868,7 @@ str_tree_on_row(GtkTreeSelection *treeselection,
   guint cont_id;
   int i;
   char *path_string;
+  char *str_data;
   GtkTreeModel *model;
   GtkTreeIter iter;
 
@@ -856,9 +882,24 @@ str_tree_on_row(GtkTreeSelection *treeselection,
 					 "Info");
 
   gtk_tree_selection_get_selected(treeselection, &model, &iter);
-  path_string = gtk_tree_model_get_string_from_iter(model, &iter);
-  i = atoi(path_string);
-  g_free(path_string);
+
+
+  gtk_tree_model_get(model, &iter, 
+		     STR_NAME, &str_data,
+		     -1);
+
+#ifdef DEBUG_ORDERABLE
+  fprintf(stderr, "Selected string: %s\n", str_data);
+#endif
+
+  for(i=0; i<s_num; i++) {
+
+    if((strncmp(s_ptr[i].name, str_data, 255)) == 0) break;
+
+  }
+
+
+  g_free(str_data);
 
   gtk_statusbar_push(GTK_STATUSBAR(my_status),
 		     cont_id,
@@ -874,7 +915,7 @@ str_tree_on_row(GtkTreeSelection *treeselection,
  * has been modified and syncs the new entry value
  * with the value stored in the RC_NODE structure.
  */
-void
+static void
 str_edited_callback(GtkCellRendererText *cell,
 		    gchar               *path_string,
 		    gchar               *new_text,
@@ -923,7 +964,7 @@ str_edited_callback(GtkCellRendererText *cell,
 }
 
 /* knob cell toggle callback */
-void
+static void
 knob_toggled_callback(GtkCellRendererToggle *cell,
 		      gchar                 *path_string,
 		      gpointer               user_data)
@@ -1012,7 +1053,7 @@ knob_toggled_callback(GtkCellRendererToggle *cell,
 
 }
 /* The usual 'About' window */
-void 
+static void
 about_pressed(GtkWidget *widget, gpointer data)
 {
 
@@ -1040,7 +1081,7 @@ about_pressed(GtkWidget *widget, gpointer data)
  * function creates the 'add entry' window,
  * with Name, Value and Comment entries 
  */
-void 
+static void
 add_pressed(GtkWidget * widget, gpointer data)
 {
   if(add_win_up == FALSE) {
@@ -1107,7 +1148,7 @@ add_pressed(GtkWidget * widget, gpointer data)
  * User wants to add, we need to get the new values
  * and do some sanity checks.
  */
-void 
+static void
 add_yes_pressed(GtkWidget * widget, gpointer data)
 {
   GtkTreeIter knob_iter;
@@ -1268,7 +1309,7 @@ add_yes_pressed(GtkWidget * widget, gpointer data)
 }
 
 /* User cancelled the 'add' process */
-void 
+static void
 add_no_pressed(GtkWidget * widget, gpointer data)
 {
 
@@ -1282,7 +1323,7 @@ add_no_pressed(GtkWidget * widget, gpointer data)
  * the window and stores the new geometry values
  * in $HOME/.thefishrc
  */
-void
+static void
 save_geometry(void)
 {
 
