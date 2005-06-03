@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2002-2004, Miguel Mendez. All rights reserved.
+  Copyright (c) 2002-2005, Miguel Mendez. All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -50,6 +50,7 @@
 #include "ncurses_ui.h"
 
 void usage(void);
+void about(void);
 void purge(void);
 
 char *defaults_rc_file, *rc_file;
@@ -92,11 +93,7 @@ main(int argc, char **argv)
       break;
 
     case 'v':
-      printf("The Fish %s\n"
-	     "Copyright (c) 2002-2004, Miguel Mendez."
-	     " All rights reserved.\n", THE_FISH_VERSION);
-      printf("Portions Copyright (c) 1995, Jordan Hubbard.\n");
-      exit(EXIT_SUCCESS);
+      about();
 
     case 'h':
     default:
@@ -104,10 +101,10 @@ main(int argc, char **argv)
 
     }
 
-    argc -= optind;
-    argv += optind;
-
   }
+
+  argc -= optind;
+  argv += optind;
 
 #if defined(WITH_GTK)	
   if(wantconsole == 0) gtk_init (&argc, &argv);
@@ -160,7 +157,7 @@ main(int argc, char **argv)
 
   /* Fix the problem with ncurses_ui not knowing about user_comments state */
   current = rc_knobs;
-  for(counter=0; counter<num_knobs; counter++) {
+  for(counter = 0; counter < num_knobs; counter++) {
 
     current->user_comment = 0;
     current++;
@@ -168,7 +165,7 @@ main(int argc, char **argv)
   }
 
   current = rc_strings;
-  for(counter=0; counter<num_str; counter++) {
+  for(counter = 0; counter < num_str; counter++) {
 
     current->user_comment = 0;
     current++;
@@ -199,9 +196,23 @@ main(int argc, char **argv)
 void
 usage(void)
 {
+
   printf("usage: thefish [-c] [-v] [-h]\n");
   printf("\t-c\tforce console mode\n");
   printf("\t-v\tshow version and exit\n");
   printf("\t-h\tshow this screen\n");
   exit(EXIT_SUCCESS);
+
+}
+
+void
+about(void)
+{
+
+  printf("The Fish %s\n"
+	 "Copyright (c) 2002-2005, Miguel Mendez."
+	 " All rights reserved.\n", THE_FISH_VERSION);
+  printf("Portions Copyright (c) 1995, Jordan Hubbard.\n");
+  exit(EXIT_SUCCESS);
+
 }

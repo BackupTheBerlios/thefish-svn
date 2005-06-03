@@ -27,17 +27,17 @@ LDFLAGS+= $(GTK_LDFLAGS) -ldialog -lncurses
 .endif
 
 .if defined(WITH_QT)
-LDFLAGS+= -L$(X11BASE)/lib -lqt-mt ${PTHREAD_LIBS}
+LDFLAGS+= -L$(X11BASE)/lib -lqt-mt $(PTHREAD_LIBS)
 .endif
 
 .if defined(WITH_EFENCE)
-LDFLAGS+= -L${LOCALBASE}/lib -lefence
+LDFLAGS+= -L$(LOCALBASE)/lib -lefence
 .endif
 
 PARSER_OBJ=	lex.yy.o parser.o
 CFLAGS+= -DYY_NO_UNPUT
 
-OBJECTS= $(PARSER_OBJ) main.o ncurses_ui.o
+OBJECTS= $(PARSER_OBJ) main.o file.o ncurses_ui.o
 
 .if defined(WITH_GTK)
 OBJECTS+= gtk_ui.o
@@ -49,6 +49,9 @@ OBJECTS+= qt_ui.o
 
 all:	$(OBJECTS)
 	$(CC) $(LDFLAGS) -o thefish $(OBJECTS)
+
+about:	about.o
+	$(CC) $(LDFLAGS) -o about about.o
 
 clean:
 	rm -f *.o lex.yy.* qt_ui_priv.moc thefish thefish.core

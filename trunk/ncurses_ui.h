@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2002-2004, Miguel Mendez. All rights reserved.
+  Copyright (c) 2002-2005, Miguel Mendez. All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -24,40 +24,10 @@
   $Id$
 
 */
+#ifndef NCURSES_UI_H
+#define NCURSES_UI_H
 
-#include <dialog.h>
-
-#define DMENU_NORMAL_TYPE	0x1
-#define DMENU_RADIO_TYPE	0x2 
-#define DMENU_CHECKLIST_TYPE	0x4
-#define DMENU_SELECTION_RETURNS 0x8
-#define MAX_MENU                15
-
-typedef int Boolean;
-
-typedef struct _dmenu {
-  int type;                           /* What sort of menu we are     */
-  char *title;                        /* Our title                    */
-  char *prompt;                       /* Our prompt                   */
-  char *helpline;                     /* Line of help at bottom       */
-  char *helpfile;                     /* Help file for "F1"           */
-  /* Array of menu items          */
-#if __GNUC__>=3
-  dialogMenuItem items[];
-#else
-  dialogMenuItem items[0];
-#endif
-
-} DMenu;
-
-Boolean  dmenuOpen(DMenu *, int *, int *, int *, int *, Boolean );
-Boolean  dmenuOpenSimple(DMenu *, Boolean );
-Boolean  dmenuOpenSimple(DMenu *, Boolean );
-
-void restorescr(WINDOW *);
-WINDOW * savescr(void);
-int dmenuSubmenu(dialogMenuItem *);
-int dmenuExit(dialogMenuItem *);
 int create_ncurses_ui(RC_NODE *, int, RC_NODE *, int);
-int msgNoYes(char *fmt, ...);
+
+#endif
 

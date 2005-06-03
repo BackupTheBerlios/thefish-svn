@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2004, Miguel Mendez. All rights reserved.
+  Copyright (c) 2004-2005, Miguel Mendez. All rights reserved.
 	
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -23,9 +23,7 @@
 	
   $Id$
 	
-  Note: This code is quite suboptimal for two reasons: 1) I'm still learning how QT 
-  works and 2) I'm not really a fan of C++. To be honest I hate C++, but QT makes it
-  almost bearable.
+  Note to self: C++ is an abomination from hell.
 	
 */
 
@@ -62,6 +60,7 @@ extern char *tzname[2];
 
 #include "parser.h"
 #include "thefish.h"
+#include "file.h"
 
 #include "qt_ui_priv.moc"
 
@@ -70,24 +69,24 @@ extern char *tzname[2];
 #define NOT_MODIFIED 0
 #define IS_MODIFIED 1
 
-QListView *knobs_table;
-QListView *strings_table;
-QApplication *thefish;
-QPushButton *SaveButton;
-QMainWindow *mw;
-QStatusBar *my_status_bar;
+static QListView *knobs_table;
+static QListView *strings_table;
+static QApplication *thefish;
+static QPushButton *SaveButton;
+static QMainWindow *mw;
+static QStatusBar *my_status_bar;
 
-int oldsize[2];
-int dirty;
+static int oldsize[2];
+static int dirty;
 
-RC_NODE *my_rc_knobs, *my_rc_strings;
-int my_num_knobs, my_num_strings;
+static RC_NODE *my_rc_knobs, *my_rc_strings;
+static int my_num_knobs, my_num_strings;
 
 
 // C compat glue
 extern "C" int create_qt_ui(RC_NODE *, int, RC_NODE *, int, int, char **);
 
-void save_geometry(void);
+static void save_geometry(void);
 
 extern "C" int
 create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
@@ -203,7 +202,7 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   QColor mygray(240,240,240);
 
-  for(i=num_knobs-1; i>=0; i--) {
+  for(i = num_knobs-1; i >= 0; i--) {
 
     // No user comments yet
     (rc_knobs+i)->user_comment = 0;
@@ -226,7 +225,7 @@ create_qt_ui(RC_NODE *rc_knobs, int num_knobs,
 
   }
 
-  for(i=num_strings-1; i>=0; i--) {
+  for(i = num_strings - 1; i >= 0; i--) {
 
     // No user comments yet
     (rc_strings+i)->user_comment = 0;
@@ -293,7 +292,7 @@ MyDialogs::ShowAbout()
   QMessageBox::about(0, "About The Fish",
 		     "The Fish "
 		     THE_FISH_VERSION
-		     "\nCopyright (c) 2002-2004, "
+		     "\nCopyright (c) 2002-2005, "
 		     "Miguel Mendez\n"
 		     "Shark icon (c) 2001-2003, Alan Smith\n"
 		     "E-Mail: <flynn@energyhq.es.eu.org>\n"
@@ -314,7 +313,7 @@ TableCallbacks::StringChanged(QListViewItem * item, int col, const QString & tex
   fprintf(stderr, "You've set %s to %s\n", value.ascii(), text.ascii());
 #endif
 
-  for(i=0; i<=my_num_strings; i++) {
+  for(i = 0; i <= my_num_strings; i++) {
 
     if(strncmp((my_rc_strings+i)->name, value.ascii(), 255) == 0) {
 
@@ -332,7 +331,7 @@ TableCallbacks::StringChanged(QListViewItem * item, int col, const QString & tex
 
       }
 
-      if(dirty==0) {
+      if(dirty == 0) {
 
 	SaveButton->setEnabled(FALSE);
 
@@ -356,7 +355,7 @@ TableCallbacks::StringClicked(QListViewItem *item)
 
   value = item->text(0);
 
-  for(i=0; i<=my_num_strings; i++) {
+  for(i = 0; i <= my_num_strings; i++) {
 
     if(strncmp((my_rc_strings+i)->name, value.ascii(), 255) == 0) {
 
@@ -380,7 +379,7 @@ TableCallbacks::KnobChanged(QListViewItem *item)
 
   foo = (QCheckListItem *) item;
 
-  for(i=0; i<my_num_knobs; i++) {
+  for(i = 0; i < my_num_knobs; i++) {
 
     if(strncmp(value.ascii(), (my_rc_knobs+i)->name, 255) == 0) {
 
@@ -405,7 +404,7 @@ TableCallbacks::KnobChanged(QListViewItem *item)
 
 	(my_rc_knobs+i)->modified = MODIFIED_NO;
 
-	if(dirty>0) dirty--;
+	if(dirty > 0) dirty--;
 
       }
 
@@ -493,112 +492,30 @@ save_geometry(void)
 void
 MyDialogs::DoSave()
 {
-  int i,not_committed;
-  RC_NODE *work;
-  FILE *fd;
+  int i, not_committed;
   char *rc_file;
-  char fish_header[255];
-  char time_buf[255];
   char path_string[1024];
-  time_t comm_time;
 
   not_committed = 0;
+  rc_file = getenv("FISH_RC");
 
   if(dirty > 0) {
 
-    work = my_rc_knobs;
+    i = save_changes(my_rc_knobs, my_num_knobs,
+		     my_rc_strings, my_num_strings);
 
-    rc_file = getenv("FISH_RC");
 
-    if(rc_file != NULL) {
-
-      fd=fopen(rc_file, "a");
-
-    } else { 
-
-      fd = fopen(RC_FILE, "a");
-
-    }
-
-    if(fd == NULL) {
+    if(i == -1) {
 
       not_committed = 1;			
 
     }
 
-    if(not_committed == 0) {
-
-      comm_time = time(NULL);
-      ctime_r(&comm_time, time_buf);
-      snprintf(fish_header, 255, "\n# The Fish generated deltas - %s", time_buf);
-      fprintf(fd, fish_header);
-
-      // modified knobs
-      for(i=0; i<=my_num_knobs; i++) {
-
-	if(work->modified == MODIFIED_YES) {
-
-	  if(work->user_comment == 0) {
-
-	    fprintf(fd,"%s=%s\n", work->name,
-		    work->knob_val == KNOB_IS_YES ? KNOB_YES : KNOB_NO);
-
-	  } else {
-
-	    fprintf(fd,"%s=%s\t# %s\n", work->name,
-		    work->knob_val == KNOB_IS_YES ? KNOB_YES : KNOB_NO,
-		    work->comment);
-
-	  }
-
-	  work->user_comment = 0;
-	  work->user_added = USER_ADDED_NO;
-	  work->modified = MODIFIED_NO;
-	  work->knob_orig=work->knob_val;
-
-	}
-
-	work++;
-
-	} 
-
-      // modified strings
-      work = my_rc_strings;
-      for(i=0; i<=my_num_strings; i++) {
-
-	if(work->modified == MODIFIED_YES) {
-
-	  if(work->user_comment == 0) {
-
-	    fprintf(fd,"%s=%s\n", work->name, work->value);
-
-	  } else {
-
-	    fprintf(fd,"%s=%s\t# %s\n", work->name, work->value,
-		    work->comment);
-
-	  }
-
-	  work->user_comment = 0;
-	  work->modified = MODIFIED_NO;
-	  work->user_added = USER_ADDED_NO;
-	  strncpy(work->orig, work->value, 255);
-
-	}
-
-	work++;
-
-      }  
-
-      fclose(fd);
-
-    }
-
-      /* Pop up window */
+    /* Pop up window */
     if(not_committed == 1) {
 
       snprintf(path_string, 1023, "Can't open '%s' for writing. Changes not saved.",
-	       rc_file!=NULL ? rc_file : RC_FILE);
+	       rc_file != NULL ? rc_file : RC_FILE);
 
       QMessageBox::critical( 0, "The Fish",
 			     path_string);
@@ -696,7 +613,7 @@ MyDialogs::DoAdd()
 
     }
 
-    for(i=0; i<my_num_knobs; i++) {
+    for(i = 0; i < my_num_knobs; i++) {
 
       if(strncmp(my_name.ascii(), (my_rc_knobs+i)->name, 255) == 0) {
 
@@ -707,7 +624,7 @@ MyDialogs::DoAdd()
 
     }
 
-    for(i=0; i<my_num_strings; i++) {
+    for(i = 0; i < my_num_strings; i++) {
 
       if(strncmp(my_name.ascii(), (my_rc_strings+i)->name, 255) == 0) {
 
@@ -746,7 +663,7 @@ MyDialogs::DoAdd()
 	(my_rc_knobs+my_num_knobs)->user_added = USER_ADDED_YES;
 	(my_rc_knobs+my_num_knobs)->knob_val = KNOB_IS_YES;
 	(my_rc_knobs+my_num_knobs)->knob_orig = KNOB_IS_YES;
-	(my_rc_knobs+my_num_knobs)->modified=MODIFIED_YES;
+	(my_rc_knobs+my_num_knobs)->modified = MODIFIED_YES;
 
 	strncpy((my_rc_knobs+my_num_knobs)->name, new_name, 255);
 
@@ -762,7 +679,8 @@ MyDialogs::DoAdd()
 
 	}
 
-	foo = new QCheckListItem( knobs_table, (my_rc_knobs+my_num_knobs)->name, QCheckListItem::CheckBox);
+	foo = new QCheckListItem(knobs_table, (my_rc_knobs+my_num_knobs)->name, 
+				 QCheckListItem::CheckBox);
 	foo->setOn(TRUE);
 
 	my_num_knobs++;
@@ -792,7 +710,8 @@ MyDialogs::DoAdd()
 
 	}
 
-	foo = new QCheckListItem( knobs_table, (my_rc_knobs+my_num_knobs)->name, QCheckListItem::CheckBox);
+	foo = new QCheckListItem(knobs_table, (my_rc_knobs+my_num_knobs)->name, 
+				 QCheckListItem::CheckBox);
 	foo->setOn(FALSE);
 
 	my_num_knobs++;
@@ -821,9 +740,9 @@ MyDialogs::DoAdd()
 
 	}
 
-	element = new QListViewItem( strings_table, 
-				     (my_rc_strings+my_num_strings)->name, 
-				     (my_rc_strings+my_num_strings)->value);
+	element = new QListViewItem(strings_table, 
+				    (my_rc_strings+my_num_strings)->name, 
+				    (my_rc_strings+my_num_strings)->value);
 
 	element->setRenameEnabled( 0, FALSE);
 	element->setRenameEnabled( 1, TRUE);

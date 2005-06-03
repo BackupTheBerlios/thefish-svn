@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2002-2004, Miguel Mendez. All rights reserved.
+  Copyright (c) 2002-2005, Miguel Mendez. All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -42,6 +42,8 @@ extern char *tzname[2];
 #include "parser.h"
 #include "gtk_ui.h"
 #include "thefish.h"
+#include "file.h"
+
 #include "fish16.xpm"
 #include "fish32.xpm"
 #include "fish48.xpm"
@@ -623,153 +625,57 @@ commit_pressed(GtkWidget *widget, gpointer data)
   GtkTreeIter str_iter;
 
   int i,not_committed;
-  RC_NODE *work;
-  FILE *fd;
   char *rc_file;
-  char fish_header[255];
-  char time_buf[255];
   gboolean retval;
-  time_t comm_time;
 
   not_committed = 0;
+  rc_file = getenv("FISH_RC");
 
-  if(commit_win_up == FALSE) {
+  if(dirty > 0) {
 
-    if(dirty > 0) {
+    i = save_changes(r_ptr, r_num, s_ptr, s_num);
 
-      work = r_ptr;
+    if(i == -1) not_committed = 1;			
 
-      rc_file = getenv("FISH_RC");
+    if(not_committed == 0) {
 
-      if(rc_file != NULL) {
+      retval = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(knob_store), &knob_iter);
 
-	fd = fopen(rc_file, "a");
+      while(retval) {
 
-      } else { 
+	gtk_list_store_set(knob_store, &knob_iter,
+			   KNOB_STATUS, UNCHANGED_ICON,
+			   -1);
 
-	fd = fopen(RC_FILE, "a");
-
-      }
-
-      if(fd == NULL) {
-
-	not_committed = 1;			
+	retval = gtk_tree_model_iter_next(GTK_TREE_MODEL(knob_store), &knob_iter);
 
       }
 
-      if(not_committed == 0) {
+      retval = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(str_store), &str_iter);
 
-	comm_time = time(NULL);
-	ctime_r(&comm_time, time_buf);
-	snprintf(fish_header, 255, "\n# The Fish generated deltas - %s", time_buf);
-	fprintf(fd,fish_header);
+      while(retval) {
 
-	/* modified knobs */
-	for(i=0; i<=r_num; i++) {
+	gtk_list_store_set(str_store, &str_iter,
+			   STR_STATUS, UNCHANGED_ICON,
+			   -1);
 
-	  if(work->modified == MODIFIED_YES) {
-
-	    if(work->user_comment == 0) {
-
-	      fprintf(fd,"%s=%s\n", work->name,
-		      work->knob_val == KNOB_IS_YES ? KNOB_YES : KNOB_NO);
-
-	    } else {
-
-	      fprintf(fd,"%s=%s\t# %s\n", work->name,
-		      work->knob_val == KNOB_IS_YES ? KNOB_YES : KNOB_NO,
-		      work->comment);
-
-	    }
-
-	    work->user_comment = 0;
-	    work->user_added = USER_ADDED_NO;
-	    work->modified = MODIFIED_NO;
-	    work->knob_orig = work->knob_val;
-
-	  }
-
-	  work++;
-
-	} 
-
-	retval = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(knob_store), &knob_iter);
-
-	while(retval) {
-
-	  gtk_list_store_set(knob_store, &knob_iter,
-			     KNOB_STATUS, UNCHANGED_ICON,
-			     -1);
-
-	  retval = gtk_tree_model_iter_next(GTK_TREE_MODEL(knob_store), &knob_iter);
-
-	}
-
-
-	/* modified strings */
-	work = s_ptr;
-	for(i=0; i<=s_num; i++) {
-
-	  if(work->modified == MODIFIED_YES) {
-
-	    if(work->user_comment == 0) {
-
-	      fprintf(fd,"%s=%s\n", work->name, work->value);
-
-	    } else {
-
-	      fprintf(fd,"%s=%s\t# %s\n", work->name, work->value,
-		      work->comment);
-
-	    }
-
-	    work->user_comment = 0;
-	    work->modified = MODIFIED_NO;
-	    work->user_added = USER_ADDED_NO;
-	    strncpy(work->orig, work->value, 255);
-
-	  }
-
-	  work++;
-
-	}
-
-	retval = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(str_store), &str_iter);
-
-	while(retval) {
-
-	  gtk_list_store_set(str_store, &str_iter,
-			     STR_STATUS, UNCHANGED_ICON,
-			     -1);
-
-	  retval = gtk_tree_model_iter_next(GTK_TREE_MODEL(str_store), &str_iter);
-
-	}
-
-	fclose(fd);
+	retval = gtk_tree_model_iter_next(GTK_TREE_MODEL(str_store), &str_iter);
 
       }
 
-      /* Pop up window */
-      if(not_committed == 1) {
 
-	dialog = gtk_message_dialog_new(GTK_WINDOW(window),
-					GTK_DIALOG_DESTROY_WITH_PARENT,
-					GTK_MESSAGE_ERROR,
-					GTK_BUTTONS_CLOSE,
-					"Can't open '%s' for writing. Changes not saved",
-					rc_file != NULL ? rc_file : RC_FILE);
-      } else {
 
-	dialog = gtk_message_dialog_new(GTK_WINDOW(window),
-					GTK_DIALOG_DESTROY_WITH_PARENT,
-					GTK_MESSAGE_INFO,
-					GTK_BUTTONS_OK,
-					"Changes saved");
-      }
+    }
 
-      gtk_dialog_run(GTK_DIALOG(dialog));
-      gtk_widget_destroy(dialog);
+    /* Pop up window */
+    if(not_committed == 1) {
+
+      dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				      GTK_DIALOG_DESTROY_WITH_PARENT,
+				      GTK_MESSAGE_ERROR,
+				      GTK_BUTTONS_CLOSE,
+				      "Can't open '%s' for writing. Changes not saved",
+				      rc_file != NULL ? rc_file : RC_FILE);
 
     } else {
 
@@ -777,19 +683,30 @@ commit_pressed(GtkWidget *widget, gpointer data)
 				      GTK_DIALOG_DESTROY_WITH_PARENT,
 				      GTK_MESSAGE_INFO,
 				      GTK_BUTTONS_OK,
-				      "There are no unsaved changes");
-
-      gtk_dialog_run(GTK_DIALOG(dialog));
-      gtk_widget_destroy(dialog);
-
+				      "Changes saved");
     }
 
-    if(not_committed == 0) {
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
 
-      dirty = NOT_DIRTY;
-      gtk_widget_set_sensitive(commit_button, FALSE);
+  } else {
 
-    }
+    dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				    GTK_DIALOG_DESTROY_WITH_PARENT,
+				    GTK_MESSAGE_INFO,
+				    GTK_BUTTONS_OK,
+				    "There are no unsaved changes");
+
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+
+  }
+
+  if(not_committed == 0) {
+
+    dirty = NOT_DIRTY;
+    gtk_widget_set_sensitive(commit_button, FALSE);
+
   }
 
 }
@@ -1071,7 +988,7 @@ about_pressed(GtkWidget *widget, gpointer data)
 				  GTK_BUTTONS_OK,
 				  "The Fish "
 				  THE_FISH_VERSION
-				  "\nCopyright (c) 2002-2004, "
+				  "\nCopyright (c) 2002-2005, "
 				  "Miguel Mendez\n"
 				  "Shark icon (c) 2001-2003, Alan Smith\n"
 				  "E-Mail: <flynn@energyhq.es.eu.org>\n"

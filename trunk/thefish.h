@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2003-2004, Miguel Mendez. All rights reserved.
+  Copyright (c) 2003-2005, Miguel Mendez. All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -24,7 +24,11 @@
   $Id$
 
 */
+#ifndef THE_FISH_H
+#define THE_FISH_H
 
-#define THE_FISH_VERSION "0.6.3 \"Mr. Sandman\"."
+#define THE_FISH_VERSION "0.6.4 \"Spin The Black Circle\"."
 #define RC_DEFAULTS_FILE "/etc/defaults/rc.conf"
 #define RC_FILE "/etc/rc.conf"
+
+#endif
