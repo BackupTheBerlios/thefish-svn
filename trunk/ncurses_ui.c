@@ -535,7 +535,7 @@ show_about(dialogMenuItem *tmp)
   dialog_notify("             The Fish "
 		THE_FISH_VERSION
 		"\n"
-		"        A user friendly ncurses/GTK rc.conf editor.\n"
+		"      A user friendly ncurses/GTK+/Qt rc.conf editor.\n"
 		"Copyright (c) 2002-2004, Miguel Mendez. All rights reserved.\n"
 		"        Portions Copyright (c) 1995, Jordan Hubbard.");
   return TRUE;

@@ -691,6 +691,16 @@ MyDialogs::DoAdd()
     new_value = (char *) my_value.ascii();
     new_comment = (char *) my_comment.ascii();
 
+    if(new_name==NULL || new_value==NULL) {
+
+      QMessageBox::critical( 0, "The Fish",
+			       "Name and Value cannot be null.");
+
+      delete(my_add_dialog);
+      return;
+
+    }
+
     for(i=0; i<my_num_knobs; i++) {
 
       if(strncmp(my_name.ascii(), (my_rc_knobs+i)->name, 255)==0) {

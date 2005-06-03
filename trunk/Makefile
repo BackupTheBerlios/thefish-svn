@@ -1,12 +1,13 @@
 # $Id$
 # This is a BSD Makefile, not a GNUMakefile!
 #
+X11BASE?=/usr/X11R6
 LOCALBASE?=/usr/local
 PTHREAD_LIBS?=-lc_r
 
-.if !defined(NO_GUI) && !defined(WITH_QT)
+.if defined(WITH_GTK)
 GTK_CFLAGS!=pkg-config gtk+-2.0 --cflags
-CFLAGS+= -Wall -g ${GTK_CFLAGS}
+CFLAGS+= -Wall -g -DWITH_GTK $(GTK_CFLAGS)
 .endif
 
 .if defined(NO_GUI)
@@ -14,18 +15,19 @@ CFLAGS+= -Wall -DNO_GUI
 .endif
 
 .if defined(WITH_QT)
-CFLAGS+= -Wall -DWITH_QT -I/usr/X11R6/include
+CFLAGS+= -Wall -g -DWITH_QT -I$(X11BASE)/include
+CXXFLAGS+= -Wall -g -DWITH_QT -I$(X11BASE)/include
 .endif
 
-.if !defined(NO_GUI) && !defined(WITH_QT)
+LDFLAGS= -ldialog -lncurses
+
+.if defined(WITH_GTK)
 GTK_LDFLAGS!=pkg-config gtk+-2.0 --libs
-LDFLAGS+= ${GTK_LDFLAGS} -ldialog -lncurses
-.else
-LDFLAGS+= -ldialog -lncurses
+LDFLAGS+= $(GTK_LDFLAGS) -ldialog -lncurses
 .endif
 
 .if defined(WITH_QT)
-LDFLAGS+= -L/usr/X11R6/lib -lqt-mt ${PTHREAD_LIBS}
+LDFLAGS+= -L$(X11BASE)/lib -lqt-mt ${PTHREAD_LIBS}
 .endif
 
 .if defined(WITH_EFENCE)
@@ -35,17 +37,15 @@ LDFLAGS+= -L${LOCALBASE}/lib -lefence
 PARSER_OBJ=	lex.yy.o parser.o
 CFLAGS+= -DYY_NO_UNPUT
 
-.if !defined(NO_GUI) && !defined(WITH_QT)
-OBJECTS= ${PARSER_OBJ} main.o gtk_ui.o
-.else 
-OBJECTS= ${PARSER_OBJ} main.o
+OBJECTS= $(PARSER_OBJ) main.o ncurses_ui.o
+
+.if defined(WITH_GTK)
+OBJECTS+= gtk_ui.o
 .endif
 
 .if defined(WITH_QT)
 OBJECTS+= qt_ui.o
 .endif
-
-OBJECTS+= ncurses_ui.o
 
 all:	$(OBJECTS)
 	$(CC) $(LDFLAGS) -o thefish $(OBJECTS)

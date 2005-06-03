@@ -271,7 +271,7 @@ merge_lists(RC_NODE **rc_knobs,int *num_knobs,RC_NODE **rc_str,int *num_str,
 {
   RC_NODE *rc_knobs_final;
   RC_NODE *rc_str_final;
-  RC_NODE *baz, *bar;
+  RC_NODE *baz, *bar, *aux;
   int total_nodes;
   int foo,j,k;
   int node_present;
@@ -318,10 +318,29 @@ merge_lists(RC_NODE **rc_knobs,int *num_knobs,RC_NODE **rc_str,int *num_str,
 
     node_present=0;
     bar=*rc_knobs;
+   
     for(k=0;k<(*num_knobs);k++) {
 
       if(!strncmp(baz->name,bar->name,255)) node_present=1;
       bar++;
+
+    }
+
+    aux=rc_knobs_final;
+    for(k=0;k<(total_nodes);k++) {
+
+      if(!strncmp(baz->name,aux->name,255)) {
+
+#ifdef VERBOSE_CONSOLE
+	printf("Dupe -> %s\n", aux->name);
+#endif
+	node_present=1;
+	aux->knob_val = baz->knob_val;
+	aux->knob_orig = baz->knob_orig;
+
+      }
+
+      aux++;
 
     }
 
@@ -388,6 +407,27 @@ merge_lists(RC_NODE **rc_knobs,int *num_knobs,RC_NODE **rc_str,int *num_str,
       bar++;
 
     }
+
+
+    aux=rc_str_final;
+    for(k=0;k<(total_nodes);k++) {
+
+      if(!strncmp(baz->name,aux->name,255)) {
+
+#ifdef VERBOSE_CONSOLE
+	printf("Dupe -> %s\n", aux->name);
+#endif
+
+	node_present=1;
+	strncpy(aux->value,baz->value,255);
+	strncpy(aux->orig, baz->orig, 255);
+
+      }
+
+      aux++;
+
+    }
+
 
     if(node_present==0) {
 

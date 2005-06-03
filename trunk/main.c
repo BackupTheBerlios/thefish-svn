@@ -32,19 +32,19 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
-#if !defined(NO_GUI) && !defined(WITH_QT)
+#if defined(WITH_GTK)
 #include <gtk/gtk.h>
 #endif
 
 #include "parser.h"
 #include "thefish.h"
 
-#if !defined(NO_GUI)
-#if !defined(WITH_QT)
+#if defined(WITH_GTK)
 #include "gtk_ui.h"
-#else
-#include "qt_ui.h"
 #endif
+
+#if defined(WITH_QT)
+#include "qt_ui.h"
 #endif
 
 #include "ncurses_ui.h"
@@ -109,7 +109,7 @@ main(int argc, char **argv)
 
   }
 
-#if !defined(NO_GUI) && !defined(WITH_QT)	
+#if defined(WITH_GTK)	
   if(wantconsole==0) gtk_init (&argc, &argv);
 #endif
 
@@ -176,12 +176,12 @@ main(int argc, char **argv)
   /* Launch UI */
   if(wantconsole==0) {
 
-#if !defined(NO_GUI)
-#if !defined(WITH_QT)
+#if defined(WITH_GTK)
     create_gtk_ui(rc_knobs, num_knobs, rc_strings, num_str);
-#else
-    create_qt_ui(rc_knobs, num_knobs, rc_strings, num_str, argc, argv);
 #endif
+
+#if defined(WITH_QT)
+    create_qt_ui(rc_knobs, num_knobs, rc_strings, num_str, argc, argv);
 #endif
 
   } else {
