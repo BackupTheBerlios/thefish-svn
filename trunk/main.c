@@ -52,7 +52,7 @@
 void usage(void);
 void purge(void);
 
-char *defaults_rc_file,*rc_file;
+char *defaults_rc_file, *rc_file;
 
 int
 main(int argc, char **argv)
@@ -74,13 +74,13 @@ main(int argc, char **argv)
   int ch, wantconsole;
 
 
-  wantconsole=0;
+  wantconsole = 0;
 
 #if !defined(NO_GUI)
-  envtest=getenv("DISPLAY");
-  if(envtest==NULL) wantconsole=1;
+  envtest = getenv("DISPLAY");
+  if(envtest == NULL) wantconsole=1;
 #else
-  wantconsole=1;
+  wantconsole = 1;
 #endif
 
   while((ch = getopt(argc, argv, "cvh")) != -1) {
@@ -94,7 +94,7 @@ main(int argc, char **argv)
     case 'v':
       printf("The Fish %s\n"
 	     "Copyright (c) 2002-2004, Miguel Mendez."
-	     " All rights reserved.\n",THE_FISH_VERSION);
+	     " All rights reserved.\n", THE_FISH_VERSION);
       printf("Portions Copyright (c) 1995, Jordan Hubbard.\n");
       exit(EXIT_SUCCESS);
 
@@ -110,39 +110,41 @@ main(int argc, char **argv)
   }
 
 #if defined(WITH_GTK)	
-  if(wantconsole==0) gtk_init (&argc, &argv);
+  if(wantconsole == 0) gtk_init (&argc, &argv);
 #endif
 
-  defaults_rc_file=getenv("FISH_RC_DEFAULTS");
-  rc_file=getenv("FISH_RC");
-  rc_knobs=NULL;
-  rc_strings=NULL;
-  num_knobs=0;
-  num_str=0;
+  defaults_rc_file = getenv("FISH_RC_DEFAULTS");
+  rc_file = getenv("FISH_RC");
+  rc_knobs = NULL;
+  rc_strings = NULL;
+  num_knobs = 0;
+  num_str = 0;
 
-  retval=build_list(defaults_rc_file!=NULL ? \
+  retval=build_list(defaults_rc_file != NULL ? \
 		    defaults_rc_file : RC_DEFAULTS_FILE,
-		    0,&rc_knobs,&num_knobs,&rc_strings,&num_str);
+		    0, &rc_knobs, &num_knobs, &rc_strings, &num_str);
 
 
-  rc_knobs2=NULL;
-  rc_strings2=NULL;
-  num_knobs2=0;
-  num_str2=0;
+  rc_knobs2 = NULL;
+  rc_strings2 = NULL;
+  num_knobs2 = 0;
+  num_str2 = 0;
 
 
-  retval=build_list(rc_file!=NULL ? \
+  retval=build_list(rc_file != NULL ? \
 		    rc_file : RC_FILE,
-		    0,&rc_knobs2,&num_knobs2,&rc_strings2,&num_str2);
+		    0, &rc_knobs2, &num_knobs2, &rc_strings2, &num_str2);
 
 
   purge();
 
   /* merge data */
-  retval=merge_lists(&rc_knobs,&num_knobs,&rc_strings,&num_str,&rc_knobs2,
-		     &num_knobs2,&rc_strings2,&num_str2);
+  retval = merge_lists(&rc_knobs, &num_knobs,
+		       &rc_strings, &num_str,
+		       &rc_knobs2, &num_knobs2,
+		       &rc_strings2, &num_str2);
 
-  if(retval==-1) {
+  if(retval == -1) {
 
     perror("merge_lists()");
     exit(EXIT_FAILURE);
@@ -150,31 +152,31 @@ main(int argc, char **argv)
   }
 
   /* Sort the lists */
-  list_sort(&rc_knobs,num_knobs);
-  list_sort(&rc_strings,num_str);
+  list_sort(&rc_knobs, num_knobs);
+  list_sort(&rc_strings, num_str);
 
-  counter=0;
-  current=NULL;
+  counter = 0;
+  current = NULL;
 
   /* Fix the problem with ncurses_ui not knowing about user_comments state */
-  current=rc_knobs;
-  for(counter=0;counter<num_knobs;counter++) {
+  current = rc_knobs;
+  for(counter=0; counter<num_knobs; counter++) {
 
-    current->user_comment=0;
+    current->user_comment = 0;
     current++;
 
   }
 
-  current=rc_strings;
-  for(counter=0;counter<num_str;counter++) {
+  current = rc_strings;
+  for(counter=0; counter<num_str; counter++) {
 
-    current->user_comment=0;
+    current->user_comment = 0;
     current++;
 
   }
 
   /* Launch UI */
-  if(wantconsole==0) {
+  if(wantconsole == 0) {
 
 #if defined(WITH_GTK)
     create_gtk_ui(rc_knobs, num_knobs, rc_strings, num_str);
