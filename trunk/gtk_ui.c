@@ -217,6 +217,10 @@ create_gtk_ui(RC_CONF *my_rc)
 
   old_context_id = 0;
 
+
+  /* Set application name */
+  g_set_application_name("The Fish");
+
   /* Define main window */
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
@@ -1029,13 +1033,13 @@ about_pressed(GtkWidget *widget, gpointer data)
   gtk_show_about_dialog(GTK_WINDOW(window),
 			"authors", authors,
 			"artists", artists,
-			"copyright", "(C) 2002-2005 Miguel Mendez",
+			"copyright", "(C) 2002 - 2007 Miguel Mendez",
 			"comments", comments,
 			"license", license,
 			"logo", icon64_pixbuf,
 			"name", "The Fish",
 			"version", THE_FISH_VERSION,
-			"website", "http://www.energyhq.es.eu.org/thefish.html",
+			"website", "http://thefish.berlios.de/",
 			NULL);
 
 #else
@@ -1048,11 +1052,11 @@ about_pressed(GtkWidget *widget, gpointer data)
 				  GTK_BUTTONS_OK,
 				  "The Fish "
 				  THE_FISH_VERSION
-				  "\nCopyright (c) 2002-2005, "
+				  "\nCopyright (c) 2002-2007, "
 				  "Miguel Mendez\n"
 				  "Shark icon (c) 2001-2003, Alan Smith\n"
 				  "E-Mail: <flynn@energyhq.es.eu.org>\n"
-				  "http://www.energyhq.es.eu.org/thefish.html\n");
+				  "http://thefish.berlios.de/\n");
 
   gtk_dialog_run(GTK_DIALOG(dialog));
   gtk_widget_destroy(dialog);

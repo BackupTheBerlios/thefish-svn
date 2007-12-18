@@ -27,7 +27,7 @@
 #ifndef THE_FISH_H
 #define THE_FISH_H
 
-#define THE_FISH_VERSION "0.6.5 \"The Beekeeper\""
+#define THE_FISH_VERSION "0.6.6 \"The Golden Compass\""
 #define RC_DEFAULTS_FILE "/etc/defaults/rc.conf"
 #define RC_FILE "/etc/rc.conf"
 

@@ -3,7 +3,7 @@
 #
 X11BASE?=/usr/X11R6
 LOCALBASE?=/usr/local
-PTHREAD_LIBS?=-lc_r
+PTHREAD_LIBS?=-pthread
 
 .if defined(WITH_GTK)
 GTK_CFLAGS!=pkg-config gtk+-2.0 --cflags

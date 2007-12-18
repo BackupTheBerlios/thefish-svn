@@ -208,7 +208,7 @@ about(void)
 {
 
   printf("The Fish %s\n"
-	 "Copyright (c) 2002-2005, Miguel Mendez."
+	 "Copyright (c) 2002 - 2007, Miguel Mendez."
 	 " All rights reserved.\n", THE_FISH_VERSION);
   printf("Portions Copyright (c) 1995, Jordan Hubbard.\n");
   exit(EX_OK);

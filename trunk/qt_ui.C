@@ -287,11 +287,11 @@ MyDialogs::ShowAbout()
   QMessageBox::about(0, "About The Fish",
 		     "The Fish "
 		     THE_FISH_VERSION
-		     "\nCopyright (c) 2002-2005, "
+		     "\nCopyright (c) 2002 - 2007, "
 		     "Miguel Mendez\n"
 		     "Shark icon (c) 2001-2003, Alan Smith\n"
-		     "E-Mail: <flynn@energyhq.es.eu.org>\n"
-		     "http://www.energyhq.es.eu.org/thefish.html\n"
+		     "E-Mail: <mmendez@energyhq.be>\n"
+		     "http://thefish.berlios.de/\n"
 		     ); 
 
 }

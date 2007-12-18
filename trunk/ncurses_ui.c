@@ -520,7 +520,7 @@ show_about(dialogMenuItem *tmp)
 		THE_FISH_VERSION
 		"\n"
 		"      A user friendly ncurses/GTK+/Qt rc.conf editor.\n"
-		"Copyright (c) 2002-2005, Miguel Mendez. All rights reserved.\n"
+		"Copyright (c) 2002-2007, Miguel Mendez. All rights reserved.\n"
 		"        Portions Copyright (c) 1995, Jordan Hubbard.");
   return TRUE;
 
